@@ -130,7 +130,7 @@ final class MigrationGenerator
                         "\$schema->addIndex('%s', '%s', %s, %s);",
                         $operation->tableName,
                         $operation->index->name,
-                        var_export($operation->index->columns, true),
+                        $this->exportValue($operation->index->columns),
                         $operation->index->unique ? 'true' : 'false',
                     ),
             ],
@@ -144,9 +144,9 @@ final class MigrationGenerator
                         "\$schema->addForeignKey('%s', '%s', %s, '%s', %s, %s, %s);",
                         $operation->tableName,
                         $operation->foreignKey->name,
-                        var_export($operation->foreignKey->columns, true),
+                        $this->exportValue($operation->foreignKey->columns),
                         $operation->foreignKey->referenceTable,
-                        var_export($operation->foreignKey->referenceColumns, true),
+                        $this->exportValue($operation->foreignKey->referenceColumns),
                         $operation->foreignKey->onDelete !== null ? "'" . $operation->foreignKey->onDelete . "'" : 'null',
                         $operation->foreignKey->onUpdate !== null ? "'" . $operation->foreignKey->onUpdate . "'" : 'null',
                     ),
@@ -172,14 +172,14 @@ final class MigrationGenerator
         }
 
         if ($operation->table->primaryKey !== []) {
-            $lines[] = \sprintf('    $table->primaryKey(%s);', var_export($operation->table->primaryKey, true));
+            $lines[] = \sprintf('    $table->primaryKey(%s);', $this->exportValue($operation->table->primaryKey));
         }
 
         foreach ($operation->table->indexes as $index) {
             $lines[] = \sprintf(
                 '    $table->index(%s, %s, %s);',
-                var_export($index->name, true),
-                var_export($index->columns, true),
+                $this->exportValue($index->name),
+                $this->exportValue($index->columns),
                 $index->unique ? 'true' : 'false',
             );
         }
@@ -187,12 +187,12 @@ final class MigrationGenerator
         foreach ($operation->table->foreignKeys as $fk) {
             $lines[] = \sprintf(
                 '    $table->foreignKey(%s, %s, %s, %s, %s, %s);',
-                var_export($fk->name, true),
-                var_export($fk->columns, true),
-                var_export($fk->referenceTable, true),
-                var_export($fk->referenceColumns, true),
-                $fk->onDelete !== null ? var_export($fk->onDelete, true) : 'null',
-                $fk->onUpdate !== null ? var_export($fk->onUpdate, true) : 'null',
+                $this->exportValue($fk->name),
+                $this->exportValue($fk->columns),
+                $this->exportValue($fk->referenceTable),
+                $this->exportValue($fk->referenceColumns),
+                $fk->onDelete !== null ? $this->exportValue($fk->onDelete) : 'null',
+                $fk->onUpdate !== null ? $this->exportValue($fk->onUpdate) : 'null',
             );
         }
 
@@ -222,7 +222,7 @@ final class MigrationGenerator
             $base .= '->nullable()';
         }
         if ($column->default !== null) {
-            $base .= '->default(' . var_export($column->default, true) . ')';
+            $base .= '->default(' . $this->exportValue($column->default) . ')';
         }
         if ($column->primaryKey) {
             $base .= '->primaryKey()';
@@ -237,20 +237,46 @@ final class MigrationGenerator
     private function columnExpression(Column $column): string
     {
         $parts = [
-            'name: ' . var_export($column->name, true),
+            'name: ' . $this->exportValue($column->name),
             'type: ColumnType::' . ucfirst($column->type->value),
             'nullable: ' . ($column->nullable ? 'true' : 'false'),
-            'default: ' . var_export($column->default, true),
+            'default: ' . $this->exportValue($column->default),
             'primaryKey: ' . ($column->primaryKey ? 'true' : 'false'),
             'autoIncrement: ' . ($column->autoIncrement ? 'true' : 'false'),
-            'length: ' . var_export($column->length, true),
-            'precision: ' . var_export($column->precision, true),
-            'scale: ' . var_export($column->scale, true),
+            'length: ' . $this->exportValue($column->length),
+            'precision: ' . $this->exportValue($column->precision),
+            'scale: ' . $this->exportValue($column->scale),
             'unsigned: ' . ($column->unsigned ? 'true' : 'false'),
-            'comment: ' . var_export($column->comment, true),
-            'enumValues: ' . var_export($column->enumValues, true),
+            'comment: ' . $this->exportValue($column->comment),
+            'enumValues: ' . $this->exportValue($column->enumValues),
         ];
 
         return 'new Column(' . implode(', ', $parts) . ')';
+    }
+
+    private function exportValue(mixed $value): string
+    {
+        if (!\is_array($value)) {
+            return var_export($value, true);
+        }
+
+        if ($value === []) {
+            return '[]';
+        }
+
+        $items = [];
+        if (array_is_list($value)) {
+            foreach ($value as $item) {
+                $items[] = $this->exportValue($item);
+            }
+
+            return '[' . implode(', ', $items) . ']';
+        }
+
+        foreach ($value as $key => $item) {
+            $items[] = $this->exportValue($key) . ' => ' . $this->exportValue($item);
+        }
+
+        return '[' . implode(', ', $items) . ']';
     }
 }
