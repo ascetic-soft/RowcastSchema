@@ -45,7 +45,7 @@ final class SchemaDifferTest extends TestCase
             ),
         ]);
 
-        $operations = (new SchemaDiffer())->diff($from, $to);
+        $operations = new SchemaDiffer()->diff($from, $to);
         self::assertCount(2, $operations);
         self::assertInstanceOf(AddColumn::class, $operations[0]);
         self::assertInstanceOf(CreateTable::class, $operations[1]);

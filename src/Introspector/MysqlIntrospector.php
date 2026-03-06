@@ -17,7 +17,12 @@ final readonly class MysqlIntrospector implements IntrospectorInterface
 
     public function introspect(\PDO $pdo): Schema
     {
-        $dbName = (string)$pdo->query('SELECT DATABASE()')?->fetchColumn();
+        $dbStmt = $pdo->query('SELECT DATABASE()');
+        if (!$dbStmt instanceof \PDOStatement) {
+            throw new \RuntimeException('Unable to detect current MySQL database.');
+        }
+        $dbNameRaw = $dbStmt->fetchColumn();
+        $dbName = is_string($dbNameRaw) ? $dbNameRaw : '';
         if ($dbName === '') {
             throw new \RuntimeException('Unable to detect current MySQL database.');
         }
@@ -33,9 +38,16 @@ final readonly class MysqlIntrospector implements IntrospectorInterface
         $tables = [];
         /** @var array<string, mixed> $row */
         foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
-            $tableName = (string)$row['TABLE_NAME'];
-            $columnName = (string)$row['COLUMN_NAME'];
-            $isPrimary = (string)$row['COLUMN_KEY'] === 'PRI';
+            $tableName = is_string($row['TABLE_NAME'] ?? null) ? $row['TABLE_NAME'] : '';
+            $columnName = is_string($row['COLUMN_NAME'] ?? null) ? $row['COLUMN_NAME'] : '';
+            $columnType = is_string($row['COLUMN_TYPE'] ?? null) ? $row['COLUMN_TYPE'] : '';
+            $isNullable = is_string($row['IS_NULLABLE'] ?? null) ? $row['IS_NULLABLE'] : 'NO';
+            $columnKey = is_string($row['COLUMN_KEY'] ?? null) ? $row['COLUMN_KEY'] : '';
+            $extra = is_string($row['EXTRA'] ?? null) ? $row['EXTRA'] : '';
+            if ($tableName === '' || $columnName === '' || $columnType === '') {
+                continue;
+            }
+            $isPrimary = $columnKey === 'PRI';
 
             if (!isset($tables[$tableName])) {
                 $tables[$tableName] = [
@@ -50,11 +62,11 @@ final readonly class MysqlIntrospector implements IntrospectorInterface
 
             $tables[$tableName]['columns'][$columnName] = new Column(
                 name: $columnName,
-                type: $this->typeMapper->toAbstractType((string)$row['COLUMN_TYPE']),
-                nullable: (string)$row['IS_NULLABLE'] === 'YES',
+                type: $this->typeMapper->toAbstractType($columnType),
+                nullable: $isNullable === 'YES',
                 default: $row['COLUMN_DEFAULT'],
                 primaryKey: $isPrimary,
-                autoIncrement: str_contains((string)$row['EXTRA'], 'auto_increment'),
+                autoIncrement: str_contains($extra, 'auto_increment'),
             );
         }
 

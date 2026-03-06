@@ -29,7 +29,11 @@ final class IntrospectorFactory
 
     public function createForPdo(\PDO $pdo): IntrospectorInterface
     {
-        $driver = (string)$pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
+        $driverRaw = $pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
+        if (!is_string($driverRaw) || $driverRaw === '') {
+            throw new \RuntimeException('Unable to detect PDO driver name.');
+        }
+        $driver = $driverRaw;
         if (!isset($this->registry[$driver])) {
             throw new \RuntimeException(sprintf('Unsupported PDO driver "%s".', $driver));
         }

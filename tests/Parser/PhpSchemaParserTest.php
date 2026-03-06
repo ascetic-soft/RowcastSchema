@@ -12,30 +12,30 @@ final class PhpSchemaParserTest extends TestCase
     public function testParsesPhpSchema(): void
     {
         $schemaPhp = <<<'PHP'
-<?php
-return [
-    'tables' => [
-        'users' => [
-            'columns' => [
-                'id' => [
-                    'type' => 'integer',
-                    'primaryKey' => true,
+            <?php
+            return [
+                'tables' => [
+                    'users' => [
+                        'columns' => [
+                            'id' => [
+                                'type' => 'integer',
+                                'primaryKey' => true,
+                            ],
+                            'email' => [
+                                'type' => 'string',
+                                'length' => 255,
+                            ],
+                        ],
+                        'indexes' => [
+                            'idx_users_email' => [
+                                'columns' => ['email'],
+                                'unique' => true,
+                            ],
+                        ],
+                    ],
                 ],
-                'email' => [
-                    'type' => 'string',
-                    'length' => 255,
-                ],
-            ],
-            'indexes' => [
-                'idx_users_email' => [
-                    'columns' => ['email'],
-                    'unique' => true,
-                ],
-            ],
-        ],
-    ],
-];
-PHP;
+            ];
+            PHP;
 
         $file = tempnam(sys_get_temp_dir(), 'schema_');
         if ($file === false) {
@@ -47,7 +47,7 @@ PHP;
         file_put_contents($path, $schemaPhp);
 
         try {
-            $schema = (new PhpSchemaParser())->parse($path);
+            $schema = new PhpSchemaParser()->parse($path);
             self::assertTrue($schema->hasTable('users'));
             $users = $schema->getTable('users');
             self::assertNotNull($users);

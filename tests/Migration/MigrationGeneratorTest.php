@@ -16,7 +16,7 @@ final class MigrationGeneratorTest extends TestCase
     public function testGeneratesUpAndDownForColumnOperations(): void
     {
         $dir = sys_get_temp_dir() . '/rowcast_gen_' . uniqid('', true);
-        mkdir($dir, 0777, true);
+        mkdir($dir, 0o777, true);
 
         $generator = new MigrationGenerator();
         $path = $generator->generate([

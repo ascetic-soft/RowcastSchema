@@ -14,7 +14,11 @@ final readonly class DatabaseMigrationRepository implements MigrationRepositoryI
 
     public function ensureTable(): void
     {
-        $driver = (string)$this->pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
+        $driverRaw = $this->pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
+        if (!is_string($driverRaw) || $driverRaw === '') {
+            throw new \RuntimeException('Unable to detect PDO driver name.');
+        }
+        $driver = $driverRaw;
         $versionType = $driver === 'pgsql' ? 'VARCHAR(255)' : 'VARCHAR(255)';
         $datetimeType = match ($driver) {
             'pgsql' => 'TIMESTAMP',
@@ -39,7 +43,14 @@ final readonly class DatabaseMigrationRepository implements MigrationRepositoryI
             return [];
         }
 
-        return array_values(array_map(static fn (mixed $v): string => (string)$v, $stmt->fetchAll(\PDO::FETCH_COLUMN)));
+        $versions = [];
+        foreach ($stmt->fetchAll(\PDO::FETCH_COLUMN) as $value) {
+            if (is_string($value)) {
+                $versions[] = $value;
+            }
+        }
+
+        return $versions;
     }
 
     public function markApplied(string $version): void

@@ -1,8 +1,18 @@
 # Rowcast Schema
 
+[![CI](https://github.com/ascetic-soft/RowcastSchema/actions/workflows/ci.yml/badge.svg)](https://github.com/ascetic-soft/RowcastSchema/actions/workflows/ci.yml)
+[![GitHub Pages](https://img.shields.io/badge/docs-gh--pages-blue)](https://ascetic-soft.github.io/RowcastSchema/)
+[![codecov](https://codecov.io/gh/ascetic-soft/RowcastSchema/graph/badge.svg)](https://codecov.io/gh/ascetic-soft/RowcastSchema)
+[![Latest Stable Version](https://img.shields.io/packagist/v/ascetic-soft/rowcast-schema)](https://packagist.org/packages/ascetic-soft/rowcast-schema)
+[![Total Downloads](https://img.shields.io/packagist/dt/ascetic-soft/rowcast-schema)](https://packagist.org/packages/ascetic-soft/rowcast-schema)
+[![PHP Version](https://img.shields.io/packagist/dependency-v/ascetic-soft/rowcast-schema/php)](https://packagist.org/packages/ascetic-soft/rowcast-schema)
+[![License](https://img.shields.io/packagist/l/ascetic-soft/rowcast-schema)](https://packagist.org/packages/ascetic-soft/rowcast-schema)
+
 `ascetic-soft/rowcast-schema` is a schema-first migration toolkit for PDO databases, designed to be friendly with Rowcast.
 
 For Russian documentation, see [README.ru.md](README.ru.md).
+
+**Documentation:** [English](https://ascetic-soft.github.io/RowcastSchema/) | [Русский](https://ascetic-soft.github.io/RowcastSchema/ru/)
 
 ## What it does
 

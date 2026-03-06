@@ -29,7 +29,7 @@ final class MigrationGenerator
 
         $body = $this->buildBody($className, $operations);
 
-        if (!is_dir($migrationsPath) && !mkdir($migrationsPath, 0777, true) && !is_dir($migrationsPath)) {
+        if (!is_dir($migrationsPath) && !mkdir($migrationsPath, 0o777, true) && !is_dir($migrationsPath)) {
             throw new \RuntimeException(sprintf('Unable to create migrations directory: %s', $migrationsPath));
         }
 
@@ -62,30 +62,30 @@ final class MigrationGenerator
             : "        // No rollback operations generated.\n";
 
         return <<<PHP
-<?php
+            <?php
 
-declare(strict_types=1);
+            declare(strict_types=1);
 
-use AsceticSoft\\RowcastSchema\\Migration\\AbstractMigration;
-use AsceticSoft\\RowcastSchema\\Schema\\Column;
-use AsceticSoft\\RowcastSchema\\Schema\\ColumnType;
-use AsceticSoft\\RowcastSchema\\SchemaBuilder\\SchemaBuilder;
-use AsceticSoft\\RowcastSchema\\SchemaBuilder\\TableBuilder;
+            use AsceticSoft\\RowcastSchema\\Migration\\AbstractMigration;
+            use AsceticSoft\\RowcastSchema\\Schema\\Column;
+            use AsceticSoft\\RowcastSchema\\Schema\\ColumnType;
+            use AsceticSoft\\RowcastSchema\\SchemaBuilder\\SchemaBuilder;
+            use AsceticSoft\\RowcastSchema\\SchemaBuilder\\TableBuilder;
 
-final class {$className} extends AbstractMigration
-{
-    public function up(SchemaBuilder \$schema): void
-    {
-{$upBody}
-    }
+            final class {$className} extends AbstractMigration
+            {
+                public function up(SchemaBuilder \$schema): void
+                {
+            {$upBody}
+                }
 
-    public function down(SchemaBuilder \$schema): void
-    {
-{$downBody}
-    }
-}
+                public function down(SchemaBuilder \$schema): void
+                {
+            {$downBody}
+                }
+            }
 
-PHP;
+            PHP;
     }
 
     /**

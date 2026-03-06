@@ -81,7 +81,7 @@ final class ColumnBuilder
      */
     public function values(array $values): self
     {
-        $this->enumValues = array_values($values);
+        $this->enumValues = $values;
         return $this;
     }
 

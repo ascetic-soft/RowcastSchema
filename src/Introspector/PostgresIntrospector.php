@@ -38,10 +38,16 @@ final readonly class PostgresIntrospector implements IntrospectorInterface
         $tables = [];
         /** @var array<string, mixed> $row */
         foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
-            $tableName = (string)$row['table_name'];
-            $columnName = (string)$row['column_name'];
-            $udtName = (string)$row['udt_name'];
-            $isPrimary = (string)($row['constraint_type'] ?? '') === 'PRIMARY KEY';
+            $tableName = is_string($row['table_name'] ?? null) ? $row['table_name'] : '';
+            $columnName = is_string($row['column_name'] ?? null) ? $row['column_name'] : '';
+            $udtName = is_string($row['udt_name'] ?? null) ? $row['udt_name'] : '';
+            $constraintType = is_string($row['constraint_type'] ?? null) ? $row['constraint_type'] : '';
+            $isNullable = is_string($row['is_nullable'] ?? null) ? $row['is_nullable'] : 'NO';
+            $columnDefault = is_string($row['column_default'] ?? null) ? $row['column_default'] : null;
+            if ($tableName === '' || $columnName === '' || $udtName === '') {
+                continue;
+            }
+            $isPrimary = $constraintType === 'PRIMARY KEY';
 
             if (!isset($tables[$tableName])) {
                 $tables[$tableName] = [
@@ -57,10 +63,10 @@ final readonly class PostgresIntrospector implements IntrospectorInterface
             $tables[$tableName]['columns'][$columnName] = new Column(
                 name: $columnName,
                 type: $this->typeMapper->toAbstractType($udtName),
-                nullable: (string)$row['is_nullable'] === 'YES',
-                default: $row['column_default'],
+                nullable: $isNullable === 'YES',
+                default: $columnDefault,
                 primaryKey: $isPrimary,
-                autoIncrement: str_contains((string)$row['column_default'], 'nextval'),
+                autoIncrement: is_string($columnDefault) && str_contains($columnDefault, 'nextval'),
             );
         }
 

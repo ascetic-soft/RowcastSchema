@@ -30,13 +30,14 @@ final readonly class Config
             throw new \RuntimeException('Config must contain "connection" mapping.');
         }
 
-        $dsn = (string)($connection['dsn'] ?? '');
+        $dsnRaw = $connection['dsn'] ?? null;
+        $dsn = is_string($dsnRaw) ? $dsnRaw : '';
         if ($dsn === '') {
             throw new \RuntimeException('Connection "dsn" is required.');
         }
 
-        $username = isset($connection['username']) ? (string)$connection['username'] : null;
-        $password = isset($connection['password']) ? (string)$connection['password'] : null;
+        $username = isset($connection['username']) && is_string($connection['username']) ? $connection['username'] : null;
+        $password = isset($connection['password']) && is_string($connection['password']) ? $connection['password'] : null;
         $options = $connection['options'] ?? [];
         if (!is_array($options)) {
             $options = [];
@@ -46,8 +47,10 @@ final readonly class Config
         $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
         return new self(
-            schemaPath: (string)($config['schema'] ?? getcwd() . '/schema.php'),
-            migrationsPath: (string)($config['migrations'] ?? getcwd() . '/migrations'),
+            schemaPath: isset($config['schema']) && is_string($config['schema']) ? $config['schema'] : getcwd() . '/schema.php',
+            migrationsPath: isset($config['migrations']) && is_string($config['migrations'])
+                ? $config['migrations']
+                : getcwd() . '/migrations',
             pdo: $pdo,
         );
     }

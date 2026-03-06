@@ -41,7 +41,7 @@ final class Application
             $parser = $this->createParser($config->schemaPath);
             $differ = new SchemaDiffer();
             $introspectorFactory = new IntrospectorFactory();
-            $platform = (new PlatformFactory())->createForPdo($config->pdo);
+            $platform = new PlatformFactory()->createForPdo($config->pdo);
             $loader = new MigrationLoader();
             $repository = new DatabaseMigrationRepository($config->pdo);
             $runner = new MigrationRunner($config->pdo, $loader, $repository, $platform);
@@ -69,15 +69,15 @@ final class Application
     private function printUsage(): void
     {
         echo <<<TXT
-Rowcast Schema CLI
+            Rowcast Schema CLI
 
-Usage:
-  rowcast-schema diff [--dry-run]
-  rowcast-schema migrate
-  rowcast-schema rollback [--step=N]
-  rowcast-schema status
+            Usage:
+              rowcast-schema diff [--dry-run]
+              rowcast-schema migrate
+              rowcast-schema rollback [--step=N]
+              rowcast-schema status
 
-TXT;
+            TXT;
     }
 
     private function createParser(string $schemaPath): SchemaParserInterface

@@ -94,11 +94,7 @@ abstract readonly class AbstractPlatform implements PlatformInterface
             $sql .= ' NOT NULL';
         }
         if ($column->default !== null) {
-            $default = is_numeric($column->default) ? (string)$column->default : "'" . str_replace("'", "\\'", (string)$column->default) . "'";
-            if (strtoupper((string)$column->default) === 'CURRENT_TIMESTAMP') {
-                $default = 'CURRENT_TIMESTAMP';
-            }
-            $sql .= sprintf(' DEFAULT %s', $default);
+            $sql .= sprintf(' DEFAULT %s', $this->compileDefaultValue($column->default));
         }
         if ($column->autoIncrement) {
             $sql .= ' AUTO_INCREMENT';
@@ -174,4 +170,22 @@ abstract readonly class AbstractPlatform implements PlatformInterface
     }
 
     abstract protected function quoteIdentifier(string $identifier): string;
+
+    private function compileDefaultValue(mixed $value): string
+    {
+        if (is_int($value) || is_float($value)) {
+            return (string)$value;
+        }
+        if (is_bool($value)) {
+            return $value ? '1' : '0';
+        }
+        if (!is_string($value)) {
+            throw new \InvalidArgumentException('Default column value must be scalar.');
+        }
+        if (strtoupper($value) === 'CURRENT_TIMESTAMP') {
+            return 'CURRENT_TIMESTAMP';
+        }
+
+        return "'" . str_replace("'", "\\'", $value) . "'";
+    }
 }

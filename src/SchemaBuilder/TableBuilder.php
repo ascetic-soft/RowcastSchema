@@ -65,7 +65,7 @@ final class TableBuilder
      */
     public function primaryKey(array $columns): self
     {
-        $this->primaryKey = array_values($columns);
+        $this->primaryKey = $columns;
         return $this;
     }
 

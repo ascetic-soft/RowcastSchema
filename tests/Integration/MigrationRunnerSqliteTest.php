@@ -19,28 +19,28 @@ final class MigrationRunnerSqliteTest extends TestCase
         $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
         $dir = sys_get_temp_dir() . '/rowcast_schema_' . uniqid('', true);
-        mkdir($dir, 0777, true);
+        mkdir($dir, 0o777, true);
 
         $migrationFile = $dir . '/Migration_20260101_000001.php';
         file_put_contents($migrationFile, <<<'PHP'
-<?php
-declare(strict_types=1);
+            <?php
+            declare(strict_types=1);
 
-use AsceticSoft\RowcastSchema\Migration\AbstractMigration;
-use AsceticSoft\RowcastSchema\SchemaBuilder\SchemaBuilder;
-use AsceticSoft\RowcastSchema\SchemaBuilder\TableBuilder;
+            use AsceticSoft\RowcastSchema\Migration\AbstractMigration;
+            use AsceticSoft\RowcastSchema\SchemaBuilder\SchemaBuilder;
+            use AsceticSoft\RowcastSchema\SchemaBuilder\TableBuilder;
 
-final class Migration_20260101_000001 extends AbstractMigration
-{
-    public function up(SchemaBuilder $schema): void
-    {
-        $schema->createTable('users', function (TableBuilder $table): void {
-            $table->integer('id')->primaryKey();
-            $table->string('email', 255);
-        });
-    }
-}
-PHP);
+            final class Migration_20260101_000001 extends AbstractMigration
+            {
+                public function up(SchemaBuilder $schema): void
+                {
+                    $schema->createTable('users', function (TableBuilder $table): void {
+                        $table->integer('id')->primaryKey();
+                        $table->string('email', 255);
+                    });
+                }
+            }
+            PHP);
 
         $runner = new MigrationRunner(
             $pdo,

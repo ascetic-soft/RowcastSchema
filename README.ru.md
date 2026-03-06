@@ -4,6 +4,8 @@
 
 English version: [README.md](README.md)
 
+**Документация:** [English](https://ascetic-soft.github.io/RowcastSchema/) | [Русский](https://ascetic-soft.github.io/RowcastSchema/ru/)
+
 ## Что делает библиотека
 
 Базовый workflow:

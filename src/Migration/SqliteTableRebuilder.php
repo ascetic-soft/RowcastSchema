@@ -101,13 +101,11 @@ final readonly class SqliteTableRebuilder
                 $needle = $this->foreignKeyToArray($operation->foreignKey);
                 $foreignKeys = array_values(array_filter(
                     $foreignKeys,
-                    static function (array $fk) use ($needle): bool {
-                        return !(
-                            $fk['referenceTable'] === $needle['referenceTable']
+                    static fn (array $fk): bool => !(
+                        $fk['referenceTable'] === $needle['referenceTable']
                             && $fk['columns'] === $needle['columns']
                             && $fk['referenceColumns'] === $needle['referenceColumns']
-                        );
-                    },
+                    ),
                 ));
             }
         }
@@ -181,7 +179,7 @@ final readonly class SqliteTableRebuilder
         $indexes = [];
         /** @var array{name: string, unique: int, origin: string} $idx */
         foreach ($idxStmt->fetchAll(\PDO::FETCH_ASSOC) as $idx) {
-            if (($idx['origin'] ?? '') !== 'c') {
+            if ($idx['origin'] !== 'c') {
                 continue;
             }
             $idxName = (string)$idx['name'];
@@ -242,7 +240,7 @@ final readonly class SqliteTableRebuilder
                 $part .= ' NOT NULL';
             }
             if ($column['default'] !== null) {
-                $part .= ' DEFAULT ' . (string)$column['default'];
+                $part .= ' DEFAULT ' . $this->quoteRawDefault($column['default']);
             }
             $parts[] = $part;
         }
@@ -337,17 +335,35 @@ final readonly class SqliteTableRebuilder
 
     private function normalizeDefault(mixed $value): string
     {
-        if (is_numeric($value)) {
+        if (is_int($value) || is_float($value)) {
             return (string)$value;
         }
-        if (strtoupper((string)$value) === 'CURRENT_TIMESTAMP') {
+        if (is_bool($value)) {
+            return $value ? '1' : '0';
+        }
+        if (!is_string($value)) {
+            throw new \InvalidArgumentException('Default value must be scalar.');
+        }
+        if (strtoupper($value) === 'CURRENT_TIMESTAMP') {
             return 'CURRENT_TIMESTAMP';
         }
-        return "'" . str_replace("'", "''", (string)$value) . "'";
+        return "'" . str_replace("'", "''", $value) . "'";
     }
 
     private function quoteIdentifier(string $identifier): string
     {
         return '"' . str_replace('"', '""', $identifier) . '"';
+    }
+
+    private function quoteRawDefault(mixed $default): string
+    {
+        if (is_int($default) || is_float($default)) {
+            return (string)$default;
+        }
+        if (!is_string($default)) {
+            throw new \RuntimeException('Unsupported SQLite default value type during table rebuild.');
+        }
+
+        return $default;
     }
 }

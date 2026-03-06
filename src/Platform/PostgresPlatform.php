@@ -54,14 +54,30 @@ final readonly class PostgresPlatform extends AbstractPlatform
         );
 
         if ($operation->newColumn->default !== null) {
-            $default = strtoupper((string)$operation->newColumn->default) === 'CURRENT_TIMESTAMP'
-                ? 'CURRENT_TIMESTAMP'
-                : "'" . str_replace("'", "\\'", (string)$operation->newColumn->default) . "'";
+            $default = $this->compileDefaultValue($operation->newColumn->default);
             $statements[] = sprintf('ALTER TABLE %s ALTER COLUMN %s SET DEFAULT %s', $table, $name, $default);
         } else {
             $statements[] = sprintf('ALTER TABLE %s ALTER COLUMN %s DROP DEFAULT', $table, $name);
         }
 
         return $statements;
+    }
+
+    private function compileDefaultValue(mixed $value): string
+    {
+        if (is_int($value) || is_float($value)) {
+            return (string)$value;
+        }
+        if (is_bool($value)) {
+            return $value ? 'true' : 'false';
+        }
+        if (!is_string($value)) {
+            throw new \InvalidArgumentException('Default column value must be scalar.');
+        }
+        if (strtoupper($value) === 'CURRENT_TIMESTAMP') {
+            return 'CURRENT_TIMESTAMP';
+        }
+
+        return "'" . str_replace("'", "\\'", $value) . "'";
     }
 }

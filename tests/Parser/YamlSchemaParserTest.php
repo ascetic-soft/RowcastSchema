@@ -16,23 +16,23 @@ final class YamlSchemaParserTest extends TestCase
         }
 
         $yaml = <<<YAML
-tables:
-  users:
-    columns:
-      id:
-        type: integer
-        primaryKey: true
-      email:
-        type: string
-        length: 255
-      created_at:
-        type: datetime
-        default: CURRENT_TIMESTAMP
-    indexes:
-      idx_users_email:
-        columns: [email]
-        unique: true
-YAML;
+            tables:
+              users:
+                columns:
+                  id:
+                    type: integer
+                    primaryKey: true
+                  email:
+                    type: string
+                    length: 255
+                  created_at:
+                    type: datetime
+                    default: CURRENT_TIMESTAMP
+                indexes:
+                  idx_users_email:
+                    columns: [email]
+                    unique: true
+            YAML;
 
         $file = tempnam(sys_get_temp_dir(), 'schema_');
         if ($file === false) {
@@ -41,7 +41,7 @@ YAML;
         file_put_contents($file, $yaml);
 
         try {
-            $schema = (new YamlSchemaParser())->parse($file);
+            $schema = new YamlSchemaParser()->parse($file);
             self::assertTrue($schema->hasTable('users'));
             $users = $schema->getTable('users');
             self::assertNotNull($users);

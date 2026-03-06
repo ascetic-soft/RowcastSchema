@@ -21,30 +21,30 @@ final class SqliteRebuildPipelineTest extends TestCase
         $pdo->exec("INSERT INTO users (id, name) VALUES (1, 'Alice')");
 
         $dir = sys_get_temp_dir() . '/rowcast_sqlite_rebuild_' . uniqid('', true);
-        mkdir($dir, 0777, true);
+        mkdir($dir, 0o777, true);
 
         $migrationFile = $dir . '/Migration_20260102_000001.php';
         file_put_contents($migrationFile, <<<'PHP'
-<?php
-declare(strict_types=1);
+            <?php
+            declare(strict_types=1);
 
-use AsceticSoft\RowcastSchema\Migration\AbstractMigration;
-use AsceticSoft\RowcastSchema\Schema\Column;
-use AsceticSoft\RowcastSchema\Schema\ColumnType;
-use AsceticSoft\RowcastSchema\SchemaBuilder\SchemaBuilder;
+            use AsceticSoft\RowcastSchema\Migration\AbstractMigration;
+            use AsceticSoft\RowcastSchema\Schema\Column;
+            use AsceticSoft\RowcastSchema\Schema\ColumnType;
+            use AsceticSoft\RowcastSchema\SchemaBuilder\SchemaBuilder;
 
-final class Migration_20260102_000001 extends AbstractMigration
-{
-    public function up(SchemaBuilder $schema): void
-    {
-        $schema->alterColumn(
-            'users',
-            new Column(name: 'name', type: ColumnType::String, length: 100),
-            new Column(name: 'name', type: ColumnType::String, length: 150, default: 'guest'),
-        );
-    }
-}
-PHP);
+            final class Migration_20260102_000001 extends AbstractMigration
+            {
+                public function up(SchemaBuilder $schema): void
+                {
+                    $schema->alterColumn(
+                        'users',
+                        new Column(name: 'name', type: ColumnType::String, length: 100),
+                        new Column(name: 'name', type: ColumnType::String, length: 150, default: 'guest'),
+                    );
+                }
+            }
+            PHP);
 
         $runner = new MigrationRunner(
             $pdo,
@@ -76,24 +76,24 @@ PHP);
         $pdo->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, org_id INTEGER)');
 
         $dir = sys_get_temp_dir() . '/rowcast_sqlite_fk_' . uniqid('', true);
-        mkdir($dir, 0777, true);
+        mkdir($dir, 0o777, true);
 
         $addFile = $dir . '/Migration_20260103_000001.php';
         file_put_contents($addFile, <<<'PHP'
-<?php
-declare(strict_types=1);
+            <?php
+            declare(strict_types=1);
 
-use AsceticSoft\RowcastSchema\Migration\AbstractMigration;
-use AsceticSoft\RowcastSchema\SchemaBuilder\SchemaBuilder;
+            use AsceticSoft\RowcastSchema\Migration\AbstractMigration;
+            use AsceticSoft\RowcastSchema\SchemaBuilder\SchemaBuilder;
 
-final class Migration_20260103_000001 extends AbstractMigration
-{
-    public function up(SchemaBuilder $schema): void
-    {
-        $schema->addForeignKey('users', 'fk_users_org', ['org_id'], 'organizations', ['id']);
-    }
-}
-PHP);
+            final class Migration_20260103_000001 extends AbstractMigration
+            {
+                public function up(SchemaBuilder $schema): void
+                {
+                    $schema->addForeignKey('users', 'fk_users_org', ['org_id'], 'organizations', ['id']);
+                }
+            }
+            PHP);
 
         $runner = new MigrationRunner(
             $pdo,
@@ -109,20 +109,20 @@ PHP);
 
         $dropFile = $dir . '/Migration_20260103_000002.php';
         file_put_contents($dropFile, <<<'PHP'
-<?php
-declare(strict_types=1);
+            <?php
+            declare(strict_types=1);
 
-use AsceticSoft\RowcastSchema\Migration\AbstractMigration;
-use AsceticSoft\RowcastSchema\SchemaBuilder\SchemaBuilder;
+            use AsceticSoft\RowcastSchema\Migration\AbstractMigration;
+            use AsceticSoft\RowcastSchema\SchemaBuilder\SchemaBuilder;
 
-final class Migration_20260103_000002 extends AbstractMigration
-{
-    public function up(SchemaBuilder $schema): void
-    {
-        $schema->dropForeignKey('users', 'fk_users_org');
-    }
-}
-PHP);
+            final class Migration_20260103_000002 extends AbstractMigration
+            {
+                public function up(SchemaBuilder $schema): void
+                {
+                    $schema->dropForeignKey('users', 'fk_users_org');
+                }
+            }
+            PHP);
 
         $runner->migrate($dir);
 
