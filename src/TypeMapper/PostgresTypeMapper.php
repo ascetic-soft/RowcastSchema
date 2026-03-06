@@ -11,11 +11,15 @@ final class PostgresTypeMapper implements TypeMapperInterface
 {
     public function toSqlType(Column $column): string
     {
+        if ($column->databaseType !== null) {
+            return $column->databaseType;
+        }
+
         return match ($column->type) {
             ColumnType::Integer => $column->autoIncrement ? 'SERIAL' : 'INTEGER',
             ColumnType::Smallint => $column->autoIncrement ? 'SMALLSERIAL' : 'SMALLINT',
             ColumnType::Bigint => $column->autoIncrement ? 'BIGSERIAL' : 'BIGINT',
-            ColumnType::String => \sprintf('VARCHAR(%d)', $column->length),
+            ColumnType::String => \sprintf('VARCHAR(%d)', $column->length ?? 255),
             ColumnType::Text => 'TEXT',
             ColumnType::Boolean => 'BOOLEAN',
             ColumnType::Decimal => \sprintf('NUMERIC(%d,%d)', $column->precision, $column->scale),

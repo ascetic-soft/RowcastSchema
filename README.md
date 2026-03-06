@@ -35,7 +35,7 @@ composer require symfony/yaml
 
 ### 1. Create a configuration file
 
-Create `rowcast-schema.php` in your project root:
+Create `rowcast-schema.php` in your project root (default path):
 
 ```php
 <?php
@@ -56,6 +56,15 @@ return [
     ],
 ];
 ```
+
+You can also store config in a custom location and pass it via CLI:
+
+```bash
+vendor/bin/rowcast-schema --config=database/rowcast-schema.php diff
+```
+
+Config may return either an array or a factory `Closure(string $projectDir): array`.
+Factory mode is useful for loading environment variables from your app kernel/project root.
 
 `migration_table` defines the table used to track applied migrations.
 This table is always ignored automatically in schema diff.
@@ -98,6 +107,10 @@ vendor/bin/rowcast-schema migrate
 vendor/bin/rowcast-schema status
 ```
 
+Global CLI option:
+
+- `--config=path` (or `--config path`) — use a custom configuration file path.
+
 ## Schema Definition
 
 ### Supported formats
@@ -127,6 +140,25 @@ The format is detected automatically by file extension.
 | `unsigned` | `false` | Unsigned integer |
 | `comment` | — | Column comment |
 | `values` | — | Enum values list |
+
+For `type: string`, default length is `255` when `length` is omitted.
+
+### Migration Builder API
+
+Generated migrations and manual migration code use a unified column API:
+
+```php
+$table->column('id', 'integer')->primaryKey();
+$table->column('email', 'string'); // VARCHAR(255) by default
+$table->column('status', ColumnType::String)->length(50);
+$table->column('payload', 'jsonb'); // custom raw DB type
+```
+
+`column()` accepts:
+
+- `ColumnType` enum values (`ColumnType::String`, `ColumnType::Datetime`, ...)
+- known abstract type strings (`'string'`, `'integer'`, ...)
+- any custom database type string (`'jsonb'`, `'citext'`, `'numeric(20,6)'`, ...)
 
 ### Foreign keys
 

@@ -27,13 +27,15 @@ final class Application
      */
     public function run(array $argv): int
     {
-        $commandName = $argv[1] ?? null;
+        [$globalOptions, $commandArgv] = $this->extractGlobalOptions($argv);
+
+        $commandName = $commandArgv[1] ?? null;
         if (!\is_string($commandName) || $commandName === '') {
             $this->printUsage();
             return 1;
         }
 
-        $configFile = getcwd() . '/rowcast-schema.php';
+        $configFile = $globalOptions['config'] ?? (getcwd() . '/rowcast-schema.php');
 
         try {
             $config = Config::fromFile($configFile);
@@ -60,7 +62,7 @@ final class Application
                 return 1;
             }
 
-            return $command->execute(\array_slice($argv, 2), $config);
+            return $command->execute(\array_slice($commandArgv, 2), $config);
         } catch (\Throwable $e) {
             fwrite(STDERR, '[rowcast-schema] ' . $e->getMessage() . PHP_EOL);
             return 1;
@@ -73,12 +75,56 @@ final class Application
             Rowcast Schema CLI
 
             Usage:
-              rowcast-schema diff [--dry-run]
-              rowcast-schema migrate
-              rowcast-schema rollback [--step=N]
-              rowcast-schema status
+              rowcast-schema [--config=path] diff [--dry-run]
+              rowcast-schema [--config=path] migrate
+              rowcast-schema [--config=path] rollback [--step=N]
+              rowcast-schema [--config=path] status
 
             TXT;
+    }
+
+    /**
+     * @param list<string> $argv
+     *
+     * @return array{0: array{config?: string}, 1: list<string>}
+     */
+    private function extractGlobalOptions(array $argv): array
+    {
+        $configPath = null;
+        $filtered = [];
+        $count = \count($argv);
+
+        for ($index = 0; $index < $count; $index++) {
+            $arg = $argv[$index];
+
+            if (\str_starts_with($arg, '--config=')) {
+                $value = \trim(\substr($arg, 9));
+                if ($value === '') {
+                    throw new \RuntimeException('Option "--config" requires a non-empty path.');
+                }
+                $configPath = $value;
+                continue;
+            }
+
+            if ($arg === '--config') {
+                $value = $argv[$index + 1] ?? null;
+                if (!\is_string($value) || $value === '') {
+                    throw new \RuntimeException('Option "--config" requires a non-empty path.');
+                }
+                $configPath = $value;
+                $index++;
+                continue;
+            }
+
+            $filtered[] = $arg;
+        }
+
+        $options = [];
+        if ($configPath !== null) {
+            $options['config'] = $configPath;
+        }
+
+        return [$options, $filtered];
     }
 
     private function createParser(string $schemaPath): SchemaParserInterface

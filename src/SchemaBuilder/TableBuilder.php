@@ -24,39 +24,15 @@ final class TableBuilder
     {
     }
 
-    public function integer(string $name): ColumnBuilder
+    public function column(string $name, ColumnType|string $type): ColumnBuilder
     {
-        return $this->column($name, ColumnType::Integer);
-    }
-
-    public function string(string $name, int $length): ColumnBuilder
-    {
-        return $this->column($name, ColumnType::String)->length($length);
-    }
-
-    public function text(string $name): ColumnBuilder
-    {
-        return $this->column($name, ColumnType::Text);
-    }
-
-    public function uuid(string $name): ColumnBuilder
-    {
-        return $this->column($name, ColumnType::Uuid);
-    }
-
-    public function datetime(string $name): ColumnBuilder
-    {
-        return $this->column($name, ColumnType::Datetime);
-    }
-
-    public function decimal(string $name, int $precision, int $scale): ColumnBuilder
-    {
-        return $this->column($name, ColumnType::Decimal)->precision($precision, $scale);
-    }
-
-    public function boolean(string $name): ColumnBuilder
-    {
-        return $this->column($name, ColumnType::Boolean);
+        [$resolvedType, $customDatabaseType] = $this->resolveType($type);
+        $builder = new ColumnBuilder($name, $resolvedType);
+        if ($customDatabaseType !== null) {
+            $builder->databaseType($customDatabaseType);
+        }
+        $this->columns[$name] = $builder;
+        return $builder;
     }
 
     /**
@@ -123,10 +99,22 @@ final class TableBuilder
         );
     }
 
-    private function column(string $name, ColumnType $type): ColumnBuilder
+    /**
+     * @return array{0: ColumnType, 1: ?string}
+     */
+    private function resolveType(ColumnType|string $type): array
     {
-        $builder = new ColumnBuilder($name, $type);
-        $this->columns[$name] = $builder;
-        return $builder;
+        if ($type instanceof ColumnType) {
+            return [$type, null];
+        }
+
+        $normalized = \trim($type);
+        $resolved = ColumnType::tryFrom(\strtolower($normalized));
+        if ($resolved instanceof ColumnType) {
+            return [$resolved, null];
+        }
+
+        return [ColumnType::Text, $normalized];
     }
+
 }

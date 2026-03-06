@@ -29,7 +29,7 @@ composer require symfony/yaml
 
 ### 1. Создайте конфигурационный файл
 
-`rowcast-schema.php` в корне проекта:
+`rowcast-schema.php` в корне проекта (путь по умолчанию):
 
 ```php
 <?php
@@ -50,6 +50,15 @@ return [
     ],
 ];
 ```
+
+Конфиг можно хранить и в кастомном месте, передав путь через CLI:
+
+```bash
+vendor/bin/rowcast-schema --config=database/rowcast-schema.php diff
+```
+
+Конфиг может возвращать либо массив, либо фабрику `Closure(string $projectDir): array`.
+Режим фабрики удобен, когда нужно подтягивать env-переменные из ядра/корня проекта.
 
 `migration_table` задаёт таблицу учёта применённых миграций.
 Эта таблица всегда игнорируется автоматически при сравнении схемы.
@@ -92,6 +101,10 @@ vendor/bin/rowcast-schema migrate
 vendor/bin/rowcast-schema status
 ```
 
+Глобальная опция CLI:
+
+- `--config=path` (или `--config path`) — использовать кастомный путь к конфигу.
+
 ## Описание схемы
 
 ### Поддерживаемые форматы
@@ -121,6 +134,25 @@ vendor/bin/rowcast-schema status
 | `unsigned` | `false` | Беззнаковое целое |
 | `comment` | — | Комментарий колонки |
 | `values` | — | Список значений enum |
+
+Для `type: string` при отсутствии `length` по умолчанию используется `255`.
+
+### API билдера миграций
+
+Сгенерированные и ручные миграции используют единый API колонок:
+
+```php
+$table->column('id', 'integer')->primaryKey();
+$table->column('email', 'string'); // VARCHAR(255) по умолчанию
+$table->column('status', ColumnType::String)->length(50);
+$table->column('payload', 'jsonb'); // кастомный raw-тип БД
+```
+
+`column()` принимает:
+
+- enum `ColumnType` (`ColumnType::String`, `ColumnType::Datetime`, ...)
+- известные абстрактные строковые типы (`'string'`, `'integer'`, ...)
+- любой кастомный строковый тип БД (`'jsonb'`, `'citext'`, `'numeric(20,6)'`, ...)
 
 ### Внешние ключи
 

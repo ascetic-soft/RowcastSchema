@@ -20,6 +20,7 @@ final class ColumnBuilder
     private ?string $comment = null;
     /** @var list<string> */
     private array $enumValues = [];
+    private ?string $databaseType = null;
 
     public function __construct(
         private readonly string $name,
@@ -85,8 +86,19 @@ final class ColumnBuilder
         return $this;
     }
 
+    public function databaseType(string $databaseType): self
+    {
+        $this->databaseType = $databaseType;
+        return $this;
+    }
+
     public function toColumn(): Column
     {
+        $length = $this->length;
+        if ($this->databaseType === null && $this->type === ColumnType::String && $length === null) {
+            $length = 255;
+        }
+
         return new Column(
             name: $this->name,
             type: $this->type,
@@ -94,12 +106,13 @@ final class ColumnBuilder
             default: $this->default,
             primaryKey: $this->primaryKey,
             autoIncrement: $this->autoIncrement,
-            length: $this->length,
+            length: $length,
             precision: $this->precision,
             scale: $this->scale,
             unsigned: $this->unsigned,
             comment: $this->comment,
             enumValues: $this->enumValues,
+            databaseType: $this->databaseType,
         );
     }
 }

@@ -25,8 +25,12 @@ final readonly class Config
         }
 
         $config = require $path;
+        if ($config instanceof \Closure) {
+            $config = $config(getcwd());
+        }
+
         if (!\is_array($config)) {
-            throw new \RuntimeException('Config file must return array.');
+            throw new \RuntimeException('Config file must return array or Closure returning array.');
         }
 
         $connection = $config['connection'] ?? null;

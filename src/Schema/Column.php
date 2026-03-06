@@ -22,16 +22,17 @@ final readonly class Column
         public bool $unsigned = false,
         public ?string $comment = null,
         public array $enumValues = [],
+        public ?string $databaseType = null,
     ) {
         if ($name === '') {
             throw new \InvalidArgumentException('Column name cannot be empty.');
         }
 
-        if ($this->type === ColumnType::String && $this->length === null) {
-            throw new \InvalidArgumentException('String column requires "length".');
+        if ($this->databaseType !== null && \trim($this->databaseType) === '') {
+            throw new \InvalidArgumentException('Custom database type cannot be empty.');
         }
 
-        if ($this->type === ColumnType::Decimal && ($this->precision === null || $this->scale === null)) {
+        if ($this->databaseType === null && $this->type === ColumnType::Decimal && ($this->precision === null || $this->scale === null)) {
             throw new \InvalidArgumentException('Decimal column requires "precision" and "scale".');
         }
 

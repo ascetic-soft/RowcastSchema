@@ -203,19 +203,20 @@ final class MigrationGenerator
 
     private function columnBuilderLine(Column $column): string
     {
-        $base = match ($column->type->value) {
-            'integer' => \sprintf("\$table->integer('%s')", $column->name),
-            'string' => \sprintf("\$table->string('%s', %d)", $column->name, $column->length ?? 255),
-            'text' => \sprintf("\$table->text('%s')", $column->name),
-            'uuid' => \sprintf("\$table->uuid('%s')", $column->name),
-            'datetime' => \sprintf("\$table->datetime('%s')", $column->name),
-            'decimal' => \sprintf("\$table->decimal('%s', %d, %d)", $column->name, $column->precision ?? 10, $column->scale ?? 2),
-            'boolean' => \sprintf("\$table->boolean('%s')", $column->name),
-            default => \sprintf('// TODO: unsupported column type %s for %s', $column->type->value, $column->name),
-        };
+        $typeExpression = $column->databaseType !== null
+            ? $this->exportValue($column->databaseType)
+            : 'ColumnType::' . ucfirst($column->type->value);
+        $base = \sprintf("\$table->column('%s', %s)", $column->name, $typeExpression);
 
-        if (str_starts_with($base, '//')) {
-            return $base;
+        if ($column->databaseType === null && $column->length !== null) {
+            $base .= \sprintf('->length(%d)', $column->length);
+        } elseif ($column->databaseType === null && $column->type->value === 'string') {
+            $base .= '->length(255)';
+        }
+        if ($column->databaseType === null && $column->precision !== null && $column->scale !== null) {
+            $base .= \sprintf('->precision(%d, %d)', $column->precision, $column->scale);
+        } elseif ($column->databaseType === null && $column->type->value === 'decimal') {
+            $base .= '->precision(10, 2)';
         }
 
         if ($column->nullable) {
@@ -249,6 +250,7 @@ final class MigrationGenerator
             'unsigned: ' . ($column->unsigned ? 'true' : 'false'),
             'comment: ' . $this->exportValue($column->comment),
             'enumValues: ' . $this->exportValue($column->enumValues),
+            'databaseType: ' . $this->exportValue($column->databaseType),
         ];
 
         return 'new Column(' . implode(', ', $parts) . ')';

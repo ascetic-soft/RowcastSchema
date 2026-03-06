@@ -35,8 +35,8 @@ final class MigrationRunnerSqliteTest extends TestCase
                 public function up(SchemaBuilder $schema): void
                 {
                     $schema->createTable('users', function (TableBuilder $table): void {
-                        $table->integer('id')->primaryKey();
-                        $table->string('email', 255);
+                        $table->column('id', 'integer')->primaryKey();
+                        $table->column('email', 'varchar(255)');
                     });
                 }
             }

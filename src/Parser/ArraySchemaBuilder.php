@@ -147,6 +147,9 @@ final class ArraySchemaBuilder
         }
 
         $length = isset($columnRaw['length']) ? $this->toInt($columnRaw['length'], 'Column length must be integer.') : null;
+        if ($type === ColumnType::String && $length === null) {
+            $length = 255;
+        }
         $precision = isset($columnRaw['precision']) ? $this->toInt($columnRaw['precision'], 'Column precision must be integer.') : null;
         $scale = isset($columnRaw['scale']) ? $this->toInt($columnRaw['scale'], 'Column scale must be integer.') : null;
 

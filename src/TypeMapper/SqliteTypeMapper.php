@@ -11,6 +11,10 @@ final class SqliteTypeMapper implements TypeMapperInterface
 {
     public function toSqlType(Column $column): string
     {
+        if ($column->databaseType !== null) {
+            return $column->databaseType;
+        }
+
         return match ($column->type) {
             ColumnType::Integer,
             ColumnType::Smallint,

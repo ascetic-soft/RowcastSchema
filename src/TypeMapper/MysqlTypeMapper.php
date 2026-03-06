@@ -11,11 +11,15 @@ final class MysqlTypeMapper implements TypeMapperInterface
 {
     public function toSqlType(Column $column): string
     {
+        if ($column->databaseType !== null) {
+            return $column->databaseType;
+        }
+
         return match ($column->type) {
             ColumnType::Integer => 'INT',
             ColumnType::Smallint => 'SMALLINT',
             ColumnType::Bigint => 'BIGINT',
-            ColumnType::String => \sprintf('VARCHAR(%d)', $column->length),
+            ColumnType::String => \sprintf('VARCHAR(%d)', $column->length ?? 255),
             ColumnType::Text => 'TEXT',
             ColumnType::Boolean => 'TINYINT(1)',
             ColumnType::Decimal => \sprintf('DECIMAL(%d,%d)', $column->precision, $column->scale),
