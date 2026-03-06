@@ -15,6 +15,8 @@ use AsceticSoft\RowcastSchema\Migration\DatabaseMigrationRepository;
 use AsceticSoft\RowcastSchema\Migration\MigrationGenerator;
 use AsceticSoft\RowcastSchema\Migration\MigrationLoader;
 use AsceticSoft\RowcastSchema\Migration\MigrationRunner;
+use AsceticSoft\RowcastSchema\Parser\PhpSchemaParser;
+use AsceticSoft\RowcastSchema\Parser\SchemaParserInterface;
 use AsceticSoft\RowcastSchema\Parser\YamlSchemaParser;
 use AsceticSoft\RowcastSchema\Platform\PlatformFactory;
 
@@ -36,7 +38,7 @@ final class Application
         try {
             $config = Config::fromFile($configFile);
 
-            $parser = new YamlSchemaParser();
+            $parser = $this->createParser($config->schemaPath);
             $differ = new SchemaDiffer();
             $introspectorFactory = new IntrospectorFactory();
             $platform = (new PlatformFactory())->createForPdo($config->pdo);
@@ -76,5 +78,19 @@ Usage:
   rowcast-schema status
 
 TXT;
+    }
+
+    private function createParser(string $schemaPath): SchemaParserInterface
+    {
+        $extension = strtolower(pathinfo($schemaPath, PATHINFO_EXTENSION));
+
+        return match ($extension) {
+            'php' => new PhpSchemaParser(),
+            'yaml', 'yml' => new YamlSchemaParser(),
+            default => throw new \InvalidArgumentException(sprintf(
+                'Unsupported schema file extension "%s". Use .php, .yaml, or .yml.',
+                $extension !== '' ? $extension : '(none)',
+            )),
+        };
     }
 }

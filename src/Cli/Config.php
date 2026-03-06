@@ -46,7 +46,7 @@ final readonly class Config
         $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
         return new self(
-            schemaPath: (string)($config['schema'] ?? getcwd() . '/schema.yaml'),
+            schemaPath: (string)($config['schema'] ?? getcwd() . '/schema.php'),
             migrationsPath: (string)($config['migrations'] ?? getcwd() . '/migrations'),
             pdo: $pdo,
         );

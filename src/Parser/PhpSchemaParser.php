@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace AsceticSoft\RowcastSchema\Parser;
 
 use AsceticSoft\RowcastSchema\Schema\Schema;
-use Symfony\Component\Yaml\Yaml;
 
-final class YamlSchemaParser implements SchemaParserInterface
+final class PhpSchemaParser implements SchemaParserInterface
 {
     public function __construct(
         private readonly ArraySchemaBuilder $schemaBuilder = new ArraySchemaBuilder(),
@@ -20,16 +19,10 @@ final class YamlSchemaParser implements SchemaParserInterface
             throw new \InvalidArgumentException(sprintf('Schema file not found: %s', $path));
         }
 
-        if (!class_exists(Yaml::class)) {
-            throw new \RuntimeException(
-                'YAML parsing requires "symfony/yaml". Install it via: composer require symfony/yaml',
-            );
-        }
-
         /** @var mixed $parsed */
-        $parsed = Yaml::parseFile($path);
+        $parsed = require $path;
         if (!is_array($parsed)) {
-            throw new \InvalidArgumentException('Schema root must be a mapping.');
+            throw new \InvalidArgumentException('Schema root must be an array.');
         }
 
         return $this->schemaBuilder->build($parsed);

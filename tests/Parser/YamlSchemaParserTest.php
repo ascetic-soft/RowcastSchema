@@ -11,6 +11,10 @@ final class YamlSchemaParserTest extends TestCase
 {
     public function testParsesYamlSchema(): void
     {
+        if (!class_exists(\Symfony\Component\Yaml\Yaml::class)) {
+            self::markTestSkipped('symfony/yaml is not installed.');
+        }
+
         $yaml = <<<YAML
 tables:
   users:

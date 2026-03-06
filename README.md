@@ -7,7 +7,7 @@ For Russian documentation, see [README.ru.md](README.ru.md).
 ## What it does
 
 Core workflow:
-- define your database structure in `schema.yaml`;
+- define your database structure in `schema.php` (or optional `schema.yaml`);
 - compare schema against a live database (`diff`);
 - generate PHP migrations automatically;
 - apply or rollback migrations;
@@ -15,9 +15,10 @@ Core workflow:
 
 ## Features
 
-- YAML schema definition (`tables`, `columns`, `indexes`, `foreignKeys`)
+- PHP schema definition without extra dependencies (`schema.php`)
+- optional YAML schema definition (`schema.yaml` / `schema.yml`) via `symfony/yaml`
 - live database introspection through PDO
-- schema diff (`schema.yaml` vs actual DB structure)
+- schema diff (configured schema file vs actual DB structure)
 - PHP migration generation (`up`/`down`)
 - migration state tracking in `_rowcast_migrations`
 - MySQL, PostgreSQL, and SQLite support
@@ -43,12 +44,56 @@ return [
         'password' => 'secret',
         // 'options' => [],
     ],
-    'schema' => __DIR__ . '/schema.yaml',
+    'schema' => __DIR__ . '/schema.php',
     'migrations' => __DIR__ . '/migrations',
 ];
 ```
 
-## `schema.yaml` format
+### Optional YAML support
+
+YAML support is optional. Install it only if you want `schema.yaml`:
+
+```bash
+composer require symfony/yaml
+```
+
+## Schema formats
+
+### `schema.php` (default, dependency-free)
+
+```php
+<?php
+
+return [
+    'tables' => [
+        'users' => [
+            'columns' => [
+                'id' => [
+                    'type' => 'integer',
+                    'primaryKey' => true,
+                    'autoIncrement' => true,
+                ],
+                'email' => [
+                    'type' => 'string',
+                    'length' => 255,
+                ],
+                'created_at' => [
+                    'type' => 'datetime',
+                    'default' => 'CURRENT_TIMESTAMP',
+                ],
+            ],
+            'indexes' => [
+                'idx_users_email' => [
+                    'columns' => ['email'],
+                    'unique' => true,
+                ],
+            ],
+        ],
+    ],
+];
+```
+
+### `schema.yaml` / `schema.yml` (optional)
 
 ```yaml
 tables:
@@ -145,7 +190,7 @@ vendor/bin/rowcast-schema status
 
 ## How it works
 
-1. The parser reads `schema.yaml` and builds an internal schema model.
+1. The parser reads the configured schema file (`.php`, `.yaml`, `.yml`) and builds an internal schema model.
 2. The introspector reads the current structure from the database.
 3. `SchemaDiffer` computes an operation list (`create`, `drop`, `add`, `alter`, etc.).
 4. The generator creates a PHP migration file.

@@ -7,7 +7,7 @@ English version: [README.md](README.md)
 ## Что делает библиотека
 
 Базовый workflow:
-- описываете структуру БД в `schema.yaml`;
+- описываете структуру БД в `schema.php` (или в опциональном `schema.yaml`);
 - сравниваете схему с реальной БД (`diff`);
 - автоматически генерируете PHP-миграции;
 - применяете или откатываете миграции;
@@ -15,9 +15,10 @@ English version: [README.md](README.md)
 
 ## Возможности
 
-- YAML-описание схемы (`tables`, `columns`, `indexes`, `foreignKeys`)
+- PHP-описание схемы без дополнительных зависимостей (`schema.php`)
+- опциональное YAML-описание (`schema.yaml` / `schema.yml`) через `symfony/yaml`
 - интроспекция текущей структуры БД через PDO
-- дифф `schema.yaml` и реальной структуры БД
+- дифф файла схемы из конфига и реальной структуры БД
 - генерация PHP-миграций (`up`/`down`)
 - хранение состояния миграций в `_rowcast_migrations`
 - поддержка MySQL, PostgreSQL и SQLite
@@ -43,12 +44,56 @@ return [
         'password' => 'secret',
         // 'options' => [],
     ],
-    'schema' => __DIR__ . '/schema.yaml',
+    'schema' => __DIR__ . '/schema.php',
     'migrations' => __DIR__ . '/migrations',
 ];
 ```
 
-## Формат `schema.yaml`
+### Опциональная поддержка YAML
+
+YAML-парсинг не обязателен. Устанавливайте только если нужен `schema.yaml`:
+
+```bash
+composer require symfony/yaml
+```
+
+## Форматы схемы
+
+### `schema.php` (по умолчанию, без зависимостей)
+
+```php
+<?php
+
+return [
+    'tables' => [
+        'users' => [
+            'columns' => [
+                'id' => [
+                    'type' => 'integer',
+                    'primaryKey' => true,
+                    'autoIncrement' => true,
+                ],
+                'email' => [
+                    'type' => 'string',
+                    'length' => 255,
+                ],
+                'created_at' => [
+                    'type' => 'datetime',
+                    'default' => 'CURRENT_TIMESTAMP',
+                ],
+            ],
+            'indexes' => [
+                'idx_users_email' => [
+                    'columns' => ['email'],
+                    'unique' => true,
+                ],
+            ],
+        ],
+    ],
+];
+```
+
+### `schema.yaml` / `schema.yml` (опционально)
 
 ```yaml
 tables:
@@ -145,7 +190,7 @@ vendor/bin/rowcast-schema status
 
 ## Как это работает
 
-1. Парсер читает `schema.yaml` и строит внутреннюю модель схемы.
+1. Парсер читает файл схемы из конфига (`.php`, `.yaml`, `.yml`) и строит внутреннюю модель.
 2. Интроспектор считывает текущую структуру из БД.
 3. `SchemaDiffer` вычисляет список операций (`create`, `drop`, `add`, `alter` и др.).
 4. Генератор создаёт PHP-файл миграции.

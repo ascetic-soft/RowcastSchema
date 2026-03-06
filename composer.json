@@ -20,8 +20,10 @@
     ],
     "require": {
         "php": ">=8.4",
-        "ext-pdo": "*",
-        "symfony/yaml": "^7.0"
+        "ext-pdo": "*"
+    },
+    "suggest": {
+        "symfony/yaml": "Required for YAML schema format (schema.yaml)"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.0",
