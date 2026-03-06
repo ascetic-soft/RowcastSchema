@@ -1,0 +1,13 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use AsceticSoft\RowcastSchema\Cli\Application;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+$application = new Application();
+$exitCode = $application->run($_SERVER['argv'] ?? []);
+
+exit($exitCode);
