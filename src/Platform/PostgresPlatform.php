@@ -35,29 +35,67 @@ final readonly class PostgresPlatform extends AbstractPlatform
     protected function compileAlterColumn(AlterColumn $operation): array
     {
         $table = $this->quoteIdentifier($operation->tableName);
-        $name = $this->quoteIdentifier($operation->newColumn->name);
+        $oldName = $this->quoteIdentifier($operation->columnName);
+        $newName = $this->quoteIdentifier($operation->newColumn->name);
 
-        $statements = [
-            \sprintf(
+        $statements = [];
+        if ($operation->columnName !== $operation->newColumn->name) {
+            $statements[] = \sprintf('ALTER TABLE %s RENAME COLUMN %s TO %s', $table, $oldName, $newName);
+        }
+
+        $targetName = $newName;
+
+        if ($operation->oldColumn === null) {
+            $statements[] = \sprintf(
                 'ALTER TABLE %s ALTER COLUMN %s TYPE %s',
                 $table,
-                $name,
+                $targetName,
                 $this->typeMapper->toSqlType($operation->newColumn),
-            ),
-        ];
+            );
+            $statements[] = \sprintf(
+                'ALTER TABLE %s ALTER COLUMN %s %s NOT NULL',
+                $table,
+                $targetName,
+                $operation->newColumn->nullable ? 'DROP' : 'SET',
+            );
 
-        $statements[] = \sprintf(
-            'ALTER TABLE %s ALTER COLUMN %s %s NOT NULL',
-            $table,
-            $name,
-            $operation->newColumn->nullable ? 'DROP' : 'SET',
-        );
+            if ($operation->newColumn->default !== null) {
+                $default = $this->compileDefaultValue($operation->newColumn->default);
+                $statements[] = \sprintf('ALTER TABLE %s ALTER COLUMN %s SET DEFAULT %s', $table, $targetName, $default);
+            } else {
+                $statements[] = \sprintf('ALTER TABLE %s ALTER COLUMN %s DROP DEFAULT', $table, $targetName);
+            }
 
-        if ($operation->newColumn->default !== null) {
-            $default = $this->compileDefaultValue($operation->newColumn->default);
-            $statements[] = \sprintf('ALTER TABLE %s ALTER COLUMN %s SET DEFAULT %s', $table, $name, $default);
-        } else {
-            $statements[] = \sprintf('ALTER TABLE %s ALTER COLUMN %s DROP DEFAULT', $table, $name);
+            return $statements;
+        }
+
+        $oldType = $this->typeMapper->toSqlType($operation->oldColumn);
+        $newType = $this->typeMapper->toSqlType($operation->newColumn);
+        if ($oldType !== $newType) {
+            $statements[] = \sprintf(
+                'ALTER TABLE %s ALTER COLUMN %s TYPE %s',
+                $table,
+                $targetName,
+                $newType,
+            );
+        }
+
+        if ($operation->oldColumn->nullable !== $operation->newColumn->nullable) {
+            $statements[] = \sprintf(
+                'ALTER TABLE %s ALTER COLUMN %s %s NOT NULL',
+                $table,
+                $targetName,
+                $operation->newColumn->nullable ? 'DROP' : 'SET',
+            );
+        }
+
+        if ($operation->oldColumn->default !== $operation->newColumn->default) {
+            if ($operation->newColumn->default !== null) {
+                $default = $this->compileDefaultValue($operation->newColumn->default);
+                $statements[] = \sprintf('ALTER TABLE %s ALTER COLUMN %s SET DEFAULT %s', $table, $targetName, $default);
+            } else {
+                $statements[] = \sprintf('ALTER TABLE %s ALTER COLUMN %s DROP DEFAULT', $table, $targetName);
+            }
         }
 
         return $statements;

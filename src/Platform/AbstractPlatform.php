@@ -160,6 +160,17 @@ abstract readonly class AbstractPlatform implements PlatformInterface
      */
     protected function compileAlterColumn(AlterColumn $operation): array
     {
+        if ($operation->columnName !== $operation->newColumn->name) {
+            return [
+                \sprintf(
+                    'ALTER TABLE %s CHANGE COLUMN %s %s',
+                    $this->quoteIdentifier($operation->tableName),
+                    $this->quoteIdentifier($operation->columnName),
+                    $this->compileColumnDefinition($operation->newColumn),
+                ),
+            ];
+        }
+
         return [
             \sprintf(
                 'ALTER TABLE %s MODIFY COLUMN %s',

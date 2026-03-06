@@ -49,9 +49,9 @@ final class SchemaBuilder
         return $this;
     }
 
-    public function alterColumn(string $table, Column $oldColumn, Column $newColumn): self
+    public function alterColumn(string $table, string $columnName, Column $newColumn): self
     {
-        $this->operations[] = new AlterColumn($table, $oldColumn, $newColumn);
+        $this->operations[] = new AlterColumn($table, $columnName, $newColumn);
         return $this;
     }
 

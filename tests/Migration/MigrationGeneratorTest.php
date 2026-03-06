@@ -25,8 +25,9 @@ final class MigrationGeneratorTest extends TestCase
             new AddColumn('users', new Column('email', ColumnType::String, length: 255)),
             new AlterColumn(
                 'users',
-                new Column('name', ColumnType::String, length: 100),
+                'name',
                 new Column('name', ColumnType::String, length: 150),
+                new Column('name', ColumnType::String, length: 100),
             ),
             new AddIndex(
                 'users',
@@ -38,7 +39,7 @@ final class MigrationGeneratorTest extends TestCase
         self::assertIsString($content);
         self::assertStringContainsString("\$schema->addColumn('users', new Column(", $content);
         self::assertStringContainsString("\$schema->dropColumn('users', 'email');", $content);
-        self::assertStringContainsString("\$schema->alterColumn('users', new Column(", $content);
+        self::assertStringContainsString("\$schema->alterColumn('users', 'name', new Column(", $content);
         self::assertStringContainsString("\$schema->addIndex('users', 'idx_users_email', ['email'], true);", $content);
         self::assertStringNotContainsString('array (', $content);
 

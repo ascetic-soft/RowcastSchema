@@ -60,7 +60,7 @@ final class SchemaDiffer
             }
 
             if ($oldColumn !== $newColumn) {
-                $operations[] = new AlterColumn($to->name, $oldColumn, $newColumn);
+                $operations[] = new AlterColumn($to->name, $oldColumn->name, $newColumn, $oldColumn);
             }
         }
 

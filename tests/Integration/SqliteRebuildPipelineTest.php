@@ -39,7 +39,7 @@ final class SqliteRebuildPipelineTest extends TestCase
                 {
                     $schema->alterColumn(
                         'users',
-                        new Column(name: 'name', type: ColumnType::String, length: 100),
+                        'name',
                         new Column(name: 'name', type: ColumnType::String, length: 150, default: 'guest'),
                     );
                 }

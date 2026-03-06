@@ -10,8 +10,9 @@ final readonly class AlterColumn implements OperationInterface
 {
     public function __construct(
         public string $tableName,
-        public Column $oldColumn,
+        public string $columnName,
         public Column $newColumn,
+        public ?Column $oldColumn = null,
     ) {
     }
 }

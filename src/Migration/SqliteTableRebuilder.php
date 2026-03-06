@@ -47,22 +47,22 @@ final readonly class SqliteTableRebuilder
         $indexes = $state['indexes'];
 
         if ($operation instanceof AlterColumn) {
-            if (!isset($columns[$operation->oldColumn->name])) {
-                throw new \RuntimeException(\sprintf('Column "%s.%s" does not exist.', $tableName, $operation->oldColumn->name));
+            if (!isset($columns[$operation->columnName])) {
+                throw new \RuntimeException(\sprintf('Column "%s.%s" does not exist.', $tableName, $operation->columnName));
             }
             $columns[$operation->newColumn->name] = $this->columnFromSchemaColumn($operation->newColumn);
-            if ($operation->oldColumn->name !== $operation->newColumn->name) {
-                unset($columns[$operation->oldColumn->name]);
+            if ($operation->columnName !== $operation->newColumn->name) {
+                unset($columns[$operation->columnName]);
                 foreach ($indexes as &$index) {
                     $index['columns'] = array_map(
-                        static fn (string $col): string => $col === $operation->oldColumn->name ? $operation->newColumn->name : $col,
+                        static fn (string $col): string => $col === $operation->columnName ? $operation->newColumn->name : $col,
                         $index['columns'],
                     );
                 }
                 unset($index);
                 foreach ($foreignKeys as &$fk) {
                     $fk['columns'] = array_map(
-                        static fn (string $col): string => $col === $operation->oldColumn->name ? $operation->newColumn->name : $col,
+                        static fn (string $col): string => $col === $operation->columnName ? $operation->newColumn->name : $col,
                         $fk['columns'],
                     );
                 }

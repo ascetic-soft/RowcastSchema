@@ -106,23 +106,7 @@ final class MigrationGenerator
             $operation instanceof DropColumn => $reverse
                 ? [\sprintf('// TODO: restore dropped column %s.%s manually for rollback.', $operation->tableName, $operation->columnName)]
                 : [\sprintf("\$schema->dropColumn('%s', '%s');", $operation->tableName, $operation->columnName)],
-            $operation instanceof AlterColumn => $reverse
-                ? [
-                    \sprintf(
-                        "\$schema->alterColumn('%s', %s, %s);",
-                        $operation->tableName,
-                        $this->columnExpression($operation->newColumn),
-                        $this->columnExpression($operation->oldColumn),
-                    ),
-                ]
-                : [
-                    \sprintf(
-                        "\$schema->alterColumn('%s', %s, %s);",
-                        $operation->tableName,
-                        $this->columnExpression($operation->oldColumn),
-                        $this->columnExpression($operation->newColumn),
-                    ),
-                ],
+            $operation instanceof AlterColumn => $this->alterColumnLines($operation, $reverse),
             $operation instanceof AddIndex => [
                 $reverse
                     ? \sprintf("\$schema->dropIndex('%s', '%s');", $operation->tableName, $operation->index->name)
@@ -240,20 +224,73 @@ final class MigrationGenerator
         $parts = [
             'name: ' . $this->exportValue($column->name),
             'type: ColumnType::' . ucfirst($column->type->value),
-            'nullable: ' . ($column->nullable ? 'true' : 'false'),
-            'default: ' . $this->exportValue($column->default),
-            'primaryKey: ' . ($column->primaryKey ? 'true' : 'false'),
-            'autoIncrement: ' . ($column->autoIncrement ? 'true' : 'false'),
-            'length: ' . $this->exportValue($column->length),
-            'precision: ' . $this->exportValue($column->precision),
-            'scale: ' . $this->exportValue($column->scale),
-            'unsigned: ' . ($column->unsigned ? 'true' : 'false'),
-            'comment: ' . $this->exportValue($column->comment),
-            'enumValues: ' . $this->exportValue($column->enumValues),
-            'databaseType: ' . $this->exportValue($column->databaseType),
         ];
 
+        if ($column->nullable) {
+            $parts[] = 'nullable: true';
+        }
+        if ($column->default !== null) {
+            $parts[] = 'default: ' . $this->exportValue($column->default);
+        }
+        if ($column->primaryKey) {
+            $parts[] = 'primaryKey: true';
+        }
+        if ($column->autoIncrement) {
+            $parts[] = 'autoIncrement: true';
+        }
+        if ($column->length !== null) {
+            $parts[] = 'length: ' . $this->exportValue($column->length);
+        }
+        if ($column->precision !== null) {
+            $parts[] = 'precision: ' . $this->exportValue($column->precision);
+        }
+        if ($column->scale !== null) {
+            $parts[] = 'scale: ' . $this->exportValue($column->scale);
+        }
+        if ($column->unsigned) {
+            $parts[] = 'unsigned: true';
+        }
+        if ($column->comment !== null) {
+            $parts[] = 'comment: ' . $this->exportValue($column->comment);
+        }
+        if ($column->enumValues !== []) {
+            $parts[] = 'enumValues: ' . $this->exportValue($column->enumValues);
+        }
+        if ($column->databaseType !== null) {
+            $parts[] = 'databaseType: ' . $this->exportValue($column->databaseType);
+        }
+
         return 'new Column(' . implode(', ', $parts) . ')';
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function alterColumnLines(AlterColumn $operation, bool $reverse): array
+    {
+        if ($reverse && $operation->oldColumn === null) {
+            return [
+                \sprintf(
+                    '// TODO: restore previous definition for altered column %s.%s manually for rollback.',
+                    $operation->tableName,
+                    $operation->columnName,
+                ),
+            ];
+        }
+
+        $targetColumn = $reverse ? $operation->oldColumn : $operation->newColumn;
+        if ($targetColumn === null) {
+            throw new \LogicException('Old column is required to reverse an alter column operation.');
+        }
+
+        return [
+            \sprintf(
+                "\$schema->alterColumn('%s', '%s', %s);",
+                $operation->tableName,
+                $operation->columnName,
+                $this->columnExpression($targetColumn),
+            ),
+        ];
     }
 
     private function exportValue(mixed $value): string
