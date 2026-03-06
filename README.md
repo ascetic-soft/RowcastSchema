@@ -218,6 +218,34 @@ For unsupported cases, Rowcast Schema uses a rebuild pipeline:
 
 This enables complex schema updates on SQLite in an automated way.
 
+## Documentation
+
+Full documentation is available on GitHub Pages:
+
+- [Getting Started](https://ascetic-soft.github.io/RowcastSchema/docs/getting-started.html)
+- [Schema Definition](https://ascetic-soft.github.io/RowcastSchema/docs/schema.html)
+- [CLI Commands](https://ascetic-soft.github.io/RowcastSchema/docs/cli.html)
+- [Migrations](https://ascetic-soft.github.io/RowcastSchema/docs/migrations.html)
+- [SQLite Support](https://ascetic-soft.github.io/RowcastSchema/docs/sqlite.html)
+- [API Reference](https://ascetic-soft.github.io/RowcastSchema/docs/api-reference.html)
+
+## Testing
+
+```bash
+composer install
+vendor/bin/phpunit
+```
+
+Static analysis:
+
+```bash
+vendor/bin/phpstan analyse
+```
+
+## License
+
+MIT
+
 ## Project status
 
 The project is under active development. The API may evolve in future versions.
