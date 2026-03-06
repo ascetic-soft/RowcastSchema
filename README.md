@@ -1,38 +1,23 @@
 # Rowcast Schema
 
 [![CI](https://github.com/ascetic-soft/RowcastSchema/actions/workflows/ci.yml/badge.svg)](https://github.com/ascetic-soft/RowcastSchema/actions/workflows/ci.yml)
-[![GitHub Pages](https://img.shields.io/badge/docs-gh--pages-blue)](https://ascetic-soft.github.io/RowcastSchema/)
 [![codecov](https://codecov.io/gh/ascetic-soft/RowcastSchema/graph/badge.svg)](https://codecov.io/gh/ascetic-soft/RowcastSchema)
+[![PHPStan Level 9](https://img.shields.io/badge/phpstan-level%209-brightgreen)](https://phpstan.org/)
 [![Latest Stable Version](https://img.shields.io/packagist/v/ascetic-soft/rowcast-schema)](https://packagist.org/packages/ascetic-soft/rowcast-schema)
 [![Total Downloads](https://img.shields.io/packagist/dt/ascetic-soft/rowcast-schema)](https://packagist.org/packages/ascetic-soft/rowcast-schema)
 [![PHP Version](https://img.shields.io/packagist/dependency-v/ascetic-soft/rowcast-schema/php)](https://packagist.org/packages/ascetic-soft/rowcast-schema)
 [![License](https://img.shields.io/packagist/l/ascetic-soft/rowcast-schema)](https://packagist.org/packages/ascetic-soft/rowcast-schema)
 
-`ascetic-soft/rowcast-schema` is a schema-first migration toolkit for PDO databases, designed to be friendly with Rowcast.
+Schema-first migration toolkit for PDO databases (PHP 8.4+).
 
-For Russian documentation, see [README.ru.md](README.ru.md).
+Zero external dependencies. Describe your database structure in a PHP file, diff it against a live database, and generate reversible PHP migrations automatically. Designed to work alongside [Rowcast](https://github.com/ascetic-soft/Rowcast).
 
 **Documentation:** [English](https://ascetic-soft.github.io/RowcastSchema/) | [Русский](https://ascetic-soft.github.io/RowcastSchema/ru/)
 
-## What it does
+## Requirements
 
-Core workflow:
-- define your database structure in `schema.php` (or optional `schema.yaml`);
-- compare schema against a live database (`diff`);
-- generate PHP migrations automatically;
-- apply or rollback migrations;
-- check schema/database sync status (`status`).
-
-## Features
-
-- PHP schema definition without extra dependencies (`schema.php`)
-- optional YAML schema definition (`schema.yaml` / `schema.yml`) via `symfony/yaml`
-- live database introspection through PDO
-- schema diff (configured schema file vs actual DB structure)
-- PHP migration generation (`up`/`down`)
-- migration state tracking in `_rowcast_migrations`
-- MySQL, PostgreSQL, and SQLite support
-- SQLite rebuild pipeline for unsupported DDL operations
+- PHP >= 8.4
+- PDO extension
 
 ## Installation
 
@@ -40,7 +25,15 @@ Core workflow:
 composer require ascetic-soft/rowcast-schema
 ```
 
-## Configuration
+Optional YAML schema support:
+
+```bash
+composer require symfony/yaml
+```
+
+## Quick Start
+
+### 1. Create a configuration file
 
 Create `rowcast-schema.php` in your project root:
 
@@ -52,24 +45,15 @@ return [
         'dsn' => 'mysql:host=localhost;dbname=app',
         'username' => 'root',
         'password' => 'secret',
-        // 'options' => [],
     ],
     'schema' => __DIR__ . '/schema.php',
     'migrations' => __DIR__ . '/migrations',
 ];
 ```
 
-### Optional YAML support
+### 2. Define a schema
 
-YAML support is optional. Install it only if you want `schema.yaml`:
-
-```bash
-composer require symfony/yaml
-```
-
-## Schema formats
-
-### `schema.php` (default, dependency-free)
+`schema.php`:
 
 ```php
 <?php
@@ -78,156 +62,175 @@ return [
     'tables' => [
         'users' => [
             'columns' => [
-                'id' => [
-                    'type' => 'integer',
-                    'primaryKey' => true,
-                    'autoIncrement' => true,
-                ],
-                'email' => [
-                    'type' => 'string',
-                    'length' => 255,
-                ],
-                'created_at' => [
-                    'type' => 'datetime',
-                    'default' => 'CURRENT_TIMESTAMP',
-                ],
+                'id' => ['type' => 'integer', 'primaryKey' => true, 'autoIncrement' => true],
+                'email' => ['type' => 'string', 'length' => 255],
+                'status' => ['type' => 'enum', 'values' => ['active', 'banned']],
+                'created_at' => ['type' => 'datetime', 'default' => 'CURRENT_TIMESTAMP'],
             ],
             'indexes' => [
-                'idx_users_email' => [
-                    'columns' => ['email'],
-                    'unique' => true,
-                ],
+                'idx_users_email' => ['columns' => ['email'], 'unique' => true],
             ],
         ],
     ],
 ];
 ```
 
-### `schema.yaml` / `schema.yml` (optional)
-
-```yaml
-tables:
-  users:
-    columns:
-      id:
-        type: integer
-        primaryKey: true
-        autoIncrement: true
-      email:
-        type: string
-        length: 255
-      created_at:
-        type: datetime
-        default: CURRENT_TIMESTAMP
-    indexes:
-      idx_users_email:
-        columns: [email]
-        unique: true
-```
-
-### Supported abstract types
-
-- `integer`, `smallint`, `bigint`
-- `string`, `text`
-- `boolean`
-- `decimal`, `float`, `double`
-- `datetime`, `date`, `time`, `timestamp`
-- `uuid`, `json`, `binary`, `enum`
-
-### Column properties
-
-- `type` (required)
-- `nullable` (default: `false`)
-- `default`
-- `primaryKey`
-- `autoIncrement`
-- `length`, `precision`, `scale`
-- `unsigned`
-- `comment`
-- `values` (for `enum`)
-
-## CLI commands
-
-Entry point:
+### 3. Generate and apply a migration
 
 ```bash
-vendor/bin/rowcast-schema
-```
-
-### Diff
-
-Generate migration from schema changes:
-
-```bash
+# Generate a migration from schema diff
 vendor/bin/rowcast-schema diff
-```
 
-Dry-run only:
-
-```bash
-vendor/bin/rowcast-schema diff --dry-run
-```
-
-### Migrate
-
-Apply pending migrations:
-
-```bash
+# Apply pending migrations
 vendor/bin/rowcast-schema migrate
-```
 
-### Rollback
-
-Rollback the latest migration:
-
-```bash
-vendor/bin/rowcast-schema rollback
-```
-
-Rollback the last N migrations:
-
-```bash
-vendor/bin/rowcast-schema rollback --step=3
-```
-
-### Status
-
-Show migration state and schema sync status:
-
-```bash
+# Check sync status
 vendor/bin/rowcast-schema status
 ```
 
-## How it works
+## Schema Definition
 
-1. The parser reads the configured schema file (`.php`, `.yaml`, `.yml`) and builds an internal schema model.
-2. The introspector reads the current structure from the database.
-3. `SchemaDiffer` computes an operation list (`create`, `drop`, `add`, `alter`, etc.).
-4. The generator creates a PHP migration file.
-5. `MigrationRunner` executes operations through a SQL platform implementation.
-6. Applied versions are stored in `_rowcast_migrations`.
+### Supported formats
 
-## SQLite notes
+| Format | File | Dependency |
+|--------|------|------------|
+| PHP array (default) | `schema.php` | None |
+| YAML | `schema.yaml` / `schema.yml` | `symfony/yaml` |
 
-SQLite has limited DDL support (`ALTER TABLE`, FK operations).  
-For unsupported cases, Rowcast Schema uses a rebuild pipeline:
-- create a temporary table with the new structure;
-- copy data;
-- swap tables;
-- recreate indexes and foreign keys.
+The format is detected automatically by file extension.
 
-This enables complex schema updates on SQLite in an automated way.
+### Abstract column types
 
-## Documentation
+`integer`, `smallint`, `bigint`, `string`, `text`, `boolean`, `decimal`, `float`, `double`, `datetime`, `date`, `time`, `timestamp`, `uuid`, `json`, `binary`, `enum`
 
-Full documentation is available on GitHub Pages:
+### Column properties
 
-- [Getting Started](https://ascetic-soft.github.io/RowcastSchema/docs/getting-started.html)
-- [Schema Definition](https://ascetic-soft.github.io/RowcastSchema/docs/schema.html)
-- [CLI Commands](https://ascetic-soft.github.io/RowcastSchema/docs/cli.html)
-- [Migrations](https://ascetic-soft.github.io/RowcastSchema/docs/migrations.html)
-- [SQLite Support](https://ascetic-soft.github.io/RowcastSchema/docs/sqlite.html)
-- [API Reference](https://ascetic-soft.github.io/RowcastSchema/docs/api-reference.html)
+| Property | Default | Description |
+|----------|---------|-------------|
+| `type` | *(required)* | Abstract column type |
+| `nullable` | `false` | Allow NULL values |
+| `default` | — | Default value |
+| `primaryKey` | `false` | Mark as primary key |
+| `autoIncrement` | `false` | Auto-increment |
+| `length` | — | String/binary length |
+| `precision` / `scale` | — | Decimal precision |
+| `unsigned` | `false` | Unsigned integer |
+| `comment` | — | Column comment |
+| `values` | — | Enum values list |
+
+### Foreign keys
+
+```php
+'foreignKeys' => [
+    'fk_posts_user' => [
+        'columns' => ['user_id'],
+        'referenceTable' => 'users',
+        'referenceColumns' => ['id'],
+        'onDelete' => 'CASCADE',
+        'onUpdate' => 'SET NULL',
+    ],
+],
+```
+
+## CLI Commands
+
+```bash
+vendor/bin/rowcast-schema <command> [options]
+```
+
+| Command | Description |
+|---------|-------------|
+| `diff` | Generate a migration from schema changes |
+| `diff --dry-run` | Preview operations without generating a file |
+| `migrate` | Apply all pending migrations |
+| `rollback` | Rollback the latest migration |
+| `rollback --step=N` | Rollback the last N migrations |
+| `status` | Show migration state and schema sync status |
+
+## How It Works
+
+1. **Parse** — reads `schema.php` (or `.yaml`) and builds an internal `Schema` model.
+2. **Introspect** — reads the current database structure via PDO.
+3. **Diff** — `SchemaDiffer` computes a list of operations (create, drop, add, alter, etc.).
+4. **Generate** — creates a PHP migration class with `up()` and `down()` methods.
+5. **Execute** — `MigrationRunner` applies operations through a database-specific SQL platform.
+6. **Track** — applied versions are stored in the `_rowcast_migrations` table.
+
+## SQLite Support
+
+SQLite has limited DDL capabilities (`ALTER TABLE`, foreign keys). For unsupported operations, Rowcast Schema uses a **rebuild pipeline**:
+
+1. Create a temporary table with the new structure
+2. Copy data from the original table
+3. Drop the original and rename the temporary table
+4. Recreate indexes and foreign keys
+
+This enables complex schema changes on SQLite transparently.
+
+## Architecture
+
+```
+AsceticSoft\RowcastSchema\
+├── Schema\
+│   ├── Schema                        # Root schema model
+│   ├── Table, Column, Index, ForeignKey  # Schema components
+│   └── ColumnType                    # Abstract type enum
+├── Parser\
+│   ├── SchemaParserInterface         # Parser contract
+│   ├── PhpSchemaParser               # PHP array parser (default)
+│   ├── YamlSchemaParser              # YAML parser (optional)
+│   └── ArraySchemaBuilder            # Shared array → Schema builder
+├── Introspector\
+│   ├── IntrospectorInterface         # Introspector contract
+│   ├── IntrospectorFactory           # PDO driver → introspector
+│   ├── MysqlIntrospector             # MySQL introspection
+│   ├── PostgresIntrospector          # PostgreSQL introspection
+│   └── SqliteIntrospector            # SQLite introspection
+├── Diff\
+│   ├── SchemaDiffer                  # Schema comparison engine
+│   └── Operation\
+│       ├── OperationInterface        # Operation contract
+│       ├── CreateTable, DropTable    # Table-level operations
+│       ├── AddColumn, AlterColumn, DropColumn
+│       ├── AddIndex, DropIndex
+│       └── AddForeignKey, DropForeignKey
+├── Platform\
+│   ├── PlatformInterface             # SQL generation contract
+│   ├── PlatformFactory               # PDO driver → platform
+│   ├── AbstractPlatform              # Shared SQL logic
+│   ├── MysqlPlatform                 # MySQL DDL
+│   ├── PostgresPlatform              # PostgreSQL DDL
+│   └── SqlitePlatform                # SQLite DDL (with rebuild)
+├── Migration\
+│   ├── MigrationInterface            # Migration contract
+│   ├── AbstractMigration             # Base migration class
+│   ├── MigrationGenerator            # PHP migration file generator
+│   ├── MigrationLoader               # Loads migration files from disk
+│   ├── MigrationRunner               # Applies/rollbacks migrations
+│   ├── MigrationRepositoryInterface  # Repository contract
+│   ├── DatabaseMigrationRepository   # Tracks applied migrations in DB
+│   └── SqliteTableRebuilder          # SQLite rebuild pipeline
+├── SchemaBuilder\
+│   ├── SchemaBuilder                 # Fluent API for migration operations
+│   ├── TableBuilder                  # Fluent table/column definition
+│   └── ColumnBuilder                 # Fluent column properties
+├── TypeMapper\
+│   ├── TypeMapperInterface           # Type mapper contract
+│   ├── MysqlTypeMapper               # MySQL type mapping
+│   ├── PostgresTypeMapper            # PostgreSQL type mapping
+│   └── SqliteTypeMapper              # SQLite type mapping
+├── Pdo\
+│   └── PdoDriverResolver            # Centralized PDO driver detection
+└── Cli\
+    ├── Application                   # CLI entry point
+    ├── Config                        # Configuration loader
+    └── Command\
+        ├── CommandInterface          # Command contract
+        ├── DiffCommand               # diff command
+        ├── MigrateCommand            # migrate command
+        ├── RollbackCommand           # rollback command
+        └── StatusCommand             # status command
+```
 
 ## Testing
 
@@ -245,8 +248,3 @@ vendor/bin/phpstan analyse
 ## License
 
 MIT
-
-## Project status
-
-The project is under active development. The API may evolve in future versions.
-
