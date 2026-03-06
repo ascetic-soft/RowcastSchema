@@ -59,7 +59,7 @@ final class SchemaDiffer
                 continue;
             }
 
-            if ($oldColumn !== $newColumn) {
+            if ($oldColumn != $newColumn) {
                 $operations[] = new AlterColumn($to->name, $oldColumn->name, $newColumn, $oldColumn);
             }
         }
@@ -77,7 +77,7 @@ final class SchemaDiffer
                 continue;
             }
 
-            if ($oldIndex !== $newIndex) {
+            if ($oldIndex != $newIndex) {
                 $operations[] = new DropIndex($to->name, $indexName);
                 $operations[] = new AddIndex($to->name, $newIndex);
             }
@@ -96,7 +96,7 @@ final class SchemaDiffer
                 continue;
             }
 
-            if ($oldFk !== $newFk) {
+            if ($oldFk != $newFk) {
                 $operations[] = new DropForeignKey($to->name, $fkName, $oldFk);
                 $operations[] = new AddForeignKey($to->name, $newFk);
             }
