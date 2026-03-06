@@ -28,7 +28,7 @@ final class Application
     public function run(array $argv): int
     {
         $commandName = $argv[1] ?? null;
-        if (!is_string($commandName) || $commandName === '') {
+        if (!\is_string($commandName) || $commandName === '') {
             $this->printUsage();
             return 1;
         }
@@ -59,9 +59,9 @@ final class Application
                 return 1;
             }
 
-            return $command->execute(array_slice($argv, 2), $config);
+            return $command->execute(\array_slice($argv, 2), $config);
         } catch (\Throwable $e) {
-            fwrite(STDERR, "[rowcast-schema] " . $e->getMessage() . PHP_EOL);
+            fwrite(STDERR, '[rowcast-schema] ' . $e->getMessage() . PHP_EOL);
             return 1;
         }
     }
@@ -87,7 +87,7 @@ final class Application
         return match ($extension) {
             'php' => new PhpSchemaParser(),
             'yaml', 'yml' => new YamlSchemaParser(),
-            default => throw new \InvalidArgumentException(sprintf(
+            default => throw new \InvalidArgumentException(\sprintf(
                 'Unsupported schema file extension "%s". Use .php, .yaml, or .yml.',
                 $extension !== '' ? $extension : '(none)',
             )),

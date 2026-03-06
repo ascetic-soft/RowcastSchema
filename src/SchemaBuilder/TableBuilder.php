@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AsceticSoft\RowcastSchema\SchemaBuilder;
 
-use AsceticSoft\RowcastSchema\Schema\Column;
 use AsceticSoft\RowcastSchema\Schema\ColumnType;
 use AsceticSoft\RowcastSchema\Schema\ForeignKey;
 use AsceticSoft\RowcastSchema\Schema\Index;

@@ -17,11 +17,13 @@ final class SchemaDifferTest extends TestCase
 {
     public function testDetectsCreateTableAndAddColumn(): void
     {
+        $usersId = new Column('id', ColumnType::Integer, primaryKey: true);
+
         $from = new Schema([
             'users' => new Table(
                 name: 'users',
                 columns: [
-                    'id' => new Column('id', ColumnType::Integer, primaryKey: true),
+                    'id' => $usersId,
                 ],
                 primaryKey: ['id'],
             ),
@@ -31,7 +33,7 @@ final class SchemaDifferTest extends TestCase
             'users' => new Table(
                 name: 'users',
                 columns: [
-                    'id' => new Column('id', ColumnType::Integer, primaryKey: true),
+                    'id' => $usersId,
                     'email' => new Column('email', ColumnType::String, length: 255),
                 ],
                 primaryKey: ['id'],

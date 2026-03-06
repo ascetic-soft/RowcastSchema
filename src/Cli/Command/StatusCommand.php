@@ -31,8 +31,8 @@ final readonly class StatusCommand implements CommandInterface
         $appliedMap = array_flip($applied);
         $pending = array_values(array_filter($all, static fn (string $v): bool => !isset($appliedMap[$v])));
 
-        echo sprintf("Applied: %d\n", count($applied));
-        echo sprintf("Pending: %d\n", count($pending));
+        echo \sprintf("Applied: %d\n", \count($applied));
+        echo \sprintf("Pending: %d\n", \count($pending));
 
         if ($pending !== []) {
             echo "Pending migrations:\n";
@@ -48,7 +48,7 @@ final readonly class StatusCommand implements CommandInterface
         if ($diff === []) {
             echo "Schema is in sync.\n";
         } else {
-            echo sprintf("Schema diff operations: %d\n", count($diff));
+            echo \sprintf("Schema diff operations: %d\n", \count($diff));
         }
 
         return 0;

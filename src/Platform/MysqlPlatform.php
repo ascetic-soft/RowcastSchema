@@ -13,6 +13,6 @@ final readonly class MysqlPlatform extends AbstractPlatform
 
     protected function quoteIdentifier(string $identifier): string
     {
-        return sprintf('`%s`', str_replace('`', '``', $identifier));
+        return \sprintf('`%s`', str_replace('`', '``', $identifier));
     }
 }

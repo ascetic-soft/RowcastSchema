@@ -38,10 +38,10 @@ final class ArraySchemaBuilder
     {
         $columnsRaw = $this->requireMap(
             $tableRaw['columns'] ?? null,
-            sprintf('Table "%s" must define non-empty "columns".', $tableName),
+            \sprintf('Table "%s" must define non-empty "columns".', $tableName),
         );
         if ($columnsRaw === []) {
-            throw new \InvalidArgumentException(sprintf('Table "%s" must define non-empty "columns".', $tableName));
+            throw new \InvalidArgumentException(\sprintf('Table "%s" must define non-empty "columns".', $tableName));
         }
 
         $columns = [];
@@ -49,7 +49,7 @@ final class ArraySchemaBuilder
         foreach ($columnsRaw as $columnName => $columnRaw) {
             $column = $this->parseColumn(
                 $columnName,
-                $this->requireMap($columnRaw, sprintf('Invalid column in table "%s".', $tableName)),
+                $this->requireMap($columnRaw, \sprintf('Invalid column in table "%s".', $tableName)),
             );
             $columns[$columnName] = $column;
             if ($column->primaryKey) {
@@ -61,20 +61,20 @@ final class ArraySchemaBuilder
         if (isset($tableRaw['primaryKey'])) {
             $primaryKey = $this->toStringList(
                 $tableRaw['primaryKey'],
-                sprintf('Table "%s" primaryKey must be list.', $tableName),
+                \sprintf('Table "%s" primaryKey must be list.', $tableName),
             );
         }
 
         $indexesRaw = $tableRaw['indexes'] ?? [];
-        if (!is_array($indexesRaw)) {
-            throw new \InvalidArgumentException(sprintf('Table "%s" indexes must be mapping.', $tableName));
+        if (!\is_array($indexesRaw)) {
+            throw new \InvalidArgumentException(\sprintf('Table "%s" indexes must be mapping.', $tableName));
         }
         $indexes = [];
         foreach ($indexesRaw as $indexName => $indexRaw) {
-            $indexMap = $this->requireMap($indexRaw, sprintf('Invalid index in table "%s".', $tableName));
+            $indexMap = $this->requireMap($indexRaw, \sprintf('Invalid index in table "%s".', $tableName));
             $cols = $this->toStringList(
                 $indexMap['columns'] ?? [],
-                sprintf('Index "%s" columns must be list.', $indexName),
+                \sprintf('Index "%s" columns must be list.', $indexName),
             );
             $indexes[$indexName] = new Index(
                 $indexName,
@@ -84,23 +84,23 @@ final class ArraySchemaBuilder
         }
 
         $foreignKeysRaw = $tableRaw['foreignKeys'] ?? [];
-        if (!is_array($foreignKeysRaw)) {
-            throw new \InvalidArgumentException(sprintf('Table "%s" foreignKeys must be mapping.', $tableName));
+        if (!\is_array($foreignKeysRaw)) {
+            throw new \InvalidArgumentException(\sprintf('Table "%s" foreignKeys must be mapping.', $tableName));
         }
         $foreignKeys = [];
         foreach ($foreignKeysRaw as $fkName => $fkRaw) {
-            $fkMap = $this->requireMap($fkRaw, sprintf('Invalid foreign key in table "%s".', $tableName));
+            $fkMap = $this->requireMap($fkRaw, \sprintf('Invalid foreign key in table "%s".', $tableName));
             $refs = $this->requireMap(
                 $fkMap['references'] ?? null,
-                sprintf('Foreign key "%s" references is required.', $fkName),
+                \sprintf('Foreign key "%s" references is required.', $fkName),
             );
             $columnsFk = $this->toStringList(
                 $fkMap['columns'] ?? [],
-                sprintf('Foreign key "%s" columns must be lists.', $fkName),
+                \sprintf('Foreign key "%s" columns must be lists.', $fkName),
             );
             $referenceColumns = $this->toStringList(
                 $refs['columns'] ?? [],
-                sprintf('Foreign key "%s" columns must be lists.', $fkName),
+                \sprintf('Foreign key "%s" columns must be lists.', $fkName),
             );
             $referenceTable = $this->toString($refs['table'] ?? '', 'Foreign key reference table must be string.');
 
@@ -132,18 +132,18 @@ final class ArraySchemaBuilder
     private function parseColumn(string $columnName, array $columnRaw): Column
     {
         $typeRaw = $columnRaw['type'] ?? null;
-        if (!is_string($typeRaw)) {
-            throw new \InvalidArgumentException(sprintf('Column "%s" must define string "type".', $columnName));
+        if (!\is_string($typeRaw)) {
+            throw new \InvalidArgumentException(\sprintf('Column "%s" must define string "type".', $columnName));
         }
 
         $type = ColumnType::tryFrom($typeRaw);
         if ($type === null) {
-            throw new \InvalidArgumentException(sprintf('Unknown column type "%s" for column "%s".', $typeRaw, $columnName));
+            throw new \InvalidArgumentException(\sprintf('Unknown column type "%s" for column "%s".', $typeRaw, $columnName));
         }
 
         $enumValuesRaw = $columnRaw['values'] ?? [];
-        if (!is_array($enumValuesRaw)) {
-            throw new \InvalidArgumentException(sprintf('Column "%s" enum values must be list.', $columnName));
+        if (!\is_array($enumValuesRaw)) {
+            throw new \InvalidArgumentException(\sprintf('Column "%s" enum values must be list.', $columnName));
         }
 
         $length = isset($columnRaw['length']) ? $this->toInt($columnRaw['length'], 'Column length must be integer.') : null;
@@ -162,7 +162,7 @@ final class ArraySchemaBuilder
             scale: $scale,
             unsigned: (bool)($columnRaw['unsigned'] ?? false),
             comment: isset($columnRaw['comment']) ? $this->toString($columnRaw['comment'], 'Column comment must be string.') : null,
-            enumValues: $this->toStringList($enumValuesRaw, sprintf('Column "%s" enum values must be list.', $columnName)),
+            enumValues: $this->toStringList($enumValuesRaw, \sprintf('Column "%s" enum values must be list.', $columnName)),
         );
     }
 
@@ -171,13 +171,13 @@ final class ArraySchemaBuilder
      */
     private function requireMap(mixed $value, string $message): array
     {
-        if (!is_array($value)) {
+        if (!\is_array($value)) {
             throw new \InvalidArgumentException($message);
         }
 
         $map = [];
         foreach ($value as $key => $item) {
-            if (!is_string($key)) {
+            if (!\is_string($key)) {
                 throw new \InvalidArgumentException($message);
             }
             $map[$key] = $item;
@@ -188,7 +188,7 @@ final class ArraySchemaBuilder
 
     private function toString(mixed $value, string $message): string
     {
-        if (!is_string($value)) {
+        if (!\is_string($value)) {
             throw new \InvalidArgumentException($message);
         }
 
@@ -197,10 +197,10 @@ final class ArraySchemaBuilder
 
     private function toInt(mixed $value, string $message): int
     {
-        if (is_int($value)) {
+        if (\is_int($value)) {
             return $value;
         }
-        if (is_string($value) && is_numeric($value)) {
+        if (\is_string($value) && is_numeric($value)) {
             return (int)$value;
         }
 
@@ -212,13 +212,13 @@ final class ArraySchemaBuilder
      */
     private function toStringList(mixed $value, string $message): array
     {
-        if (!is_array($value)) {
+        if (!\is_array($value)) {
             throw new \InvalidArgumentException($message);
         }
 
         $result = [];
         foreach ($value as $item) {
-            if (!is_string($item)) {
+            if (!\is_string($item)) {
                 throw new \InvalidArgumentException($message);
             }
             $result[] = $item;

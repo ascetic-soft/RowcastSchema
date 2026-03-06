@@ -15,17 +15,17 @@ final readonly class PostgresPlatform extends AbstractPlatform
 
     protected function quoteIdentifier(string $identifier): string
     {
-        return sprintf('"%s"', str_replace('"', '""', $identifier));
+        return \sprintf('"%s"', str_replace('"', '""', $identifier));
     }
 
     protected function compileDropIndex(string $tableName, string $indexName): string
     {
-        return sprintf('DROP INDEX %s', $this->quoteIdentifier($indexName));
+        return \sprintf('DROP INDEX %s', $this->quoteIdentifier($indexName));
     }
 
     protected function compileDropForeignKey(string $tableName, string $foreignKeyName): string
     {
-        return sprintf(
+        return \sprintf(
             'ALTER TABLE %s DROP CONSTRAINT %s',
             $this->quoteIdentifier($tableName),
             $this->quoteIdentifier($foreignKeyName),
@@ -38,7 +38,7 @@ final readonly class PostgresPlatform extends AbstractPlatform
         $name = $this->quoteIdentifier($operation->newColumn->name);
 
         $statements = [
-            sprintf(
+            \sprintf(
                 'ALTER TABLE %s ALTER COLUMN %s TYPE %s',
                 $table,
                 $name,
@@ -46,7 +46,7 @@ final readonly class PostgresPlatform extends AbstractPlatform
             ),
         ];
 
-        $statements[] = sprintf(
+        $statements[] = \sprintf(
             'ALTER TABLE %s ALTER COLUMN %s %s NOT NULL',
             $table,
             $name,
@@ -55,9 +55,9 @@ final readonly class PostgresPlatform extends AbstractPlatform
 
         if ($operation->newColumn->default !== null) {
             $default = $this->compileDefaultValue($operation->newColumn->default);
-            $statements[] = sprintf('ALTER TABLE %s ALTER COLUMN %s SET DEFAULT %s', $table, $name, $default);
+            $statements[] = \sprintf('ALTER TABLE %s ALTER COLUMN %s SET DEFAULT %s', $table, $name, $default);
         } else {
-            $statements[] = sprintf('ALTER TABLE %s ALTER COLUMN %s DROP DEFAULT', $table, $name);
+            $statements[] = \sprintf('ALTER TABLE %s ALTER COLUMN %s DROP DEFAULT', $table, $name);
         }
 
         return $statements;
@@ -65,13 +65,13 @@ final readonly class PostgresPlatform extends AbstractPlatform
 
     private function compileDefaultValue(mixed $value): string
     {
-        if (is_int($value) || is_float($value)) {
+        if (\is_int($value) || \is_float($value)) {
             return (string)$value;
         }
-        if (is_bool($value)) {
+        if (\is_bool($value)) {
             return $value ? 'true' : 'false';
         }
-        if (!is_string($value)) {
+        if (!\is_string($value)) {
             throw new \InvalidArgumentException('Default column value must be scalar.');
         }
         if (strtoupper($value) === 'CURRENT_TIMESTAMP') {

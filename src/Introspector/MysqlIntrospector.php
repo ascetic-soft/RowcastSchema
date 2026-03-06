@@ -22,7 +22,7 @@ final readonly class MysqlIntrospector implements IntrospectorInterface
             throw new \RuntimeException('Unable to detect current MySQL database.');
         }
         $dbNameRaw = $dbStmt->fetchColumn();
-        $dbName = is_string($dbNameRaw) ? $dbNameRaw : '';
+        $dbName = \is_string($dbNameRaw) ? $dbNameRaw : '';
         if ($dbName === '') {
             throw new \RuntimeException('Unable to detect current MySQL database.');
         }
@@ -38,12 +38,12 @@ final readonly class MysqlIntrospector implements IntrospectorInterface
         $tables = [];
         /** @var array<string, mixed> $row */
         foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
-            $tableName = is_string($row['TABLE_NAME'] ?? null) ? $row['TABLE_NAME'] : '';
-            $columnName = is_string($row['COLUMN_NAME'] ?? null) ? $row['COLUMN_NAME'] : '';
-            $columnType = is_string($row['COLUMN_TYPE'] ?? null) ? $row['COLUMN_TYPE'] : '';
-            $isNullable = is_string($row['IS_NULLABLE'] ?? null) ? $row['IS_NULLABLE'] : 'NO';
-            $columnKey = is_string($row['COLUMN_KEY'] ?? null) ? $row['COLUMN_KEY'] : '';
-            $extra = is_string($row['EXTRA'] ?? null) ? $row['EXTRA'] : '';
+            $tableName = \is_string($row['TABLE_NAME'] ?? null) ? $row['TABLE_NAME'] : '';
+            $columnName = \is_string($row['COLUMN_NAME'] ?? null) ? $row['COLUMN_NAME'] : '';
+            $columnType = \is_string($row['COLUMN_TYPE'] ?? null) ? $row['COLUMN_TYPE'] : '';
+            $isNullable = \is_string($row['IS_NULLABLE'] ?? null) ? $row['IS_NULLABLE'] : 'NO';
+            $columnKey = \is_string($row['COLUMN_KEY'] ?? null) ? $row['COLUMN_KEY'] : '';
+            $extra = \is_string($row['EXTRA'] ?? null) ? $row['EXTRA'] : '';
             if ($tableName === '' || $columnName === '' || $columnType === '') {
                 continue;
             }

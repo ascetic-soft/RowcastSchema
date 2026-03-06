@@ -30,7 +30,7 @@ final class MigrationGenerator
         $body = $this->buildBody($className, $operations);
 
         if (!is_dir($migrationsPath) && !mkdir($migrationsPath, 0o777, true) && !is_dir($migrationsPath)) {
-            throw new \RuntimeException(sprintf('Unable to create migrations directory: %s', $migrationsPath));
+            throw new \RuntimeException(\sprintf('Unable to create migrations directory: %s', $migrationsPath));
         }
 
         file_put_contents($filePath, $body);
@@ -72,7 +72,7 @@ final class MigrationGenerator
             use AsceticSoft\\RowcastSchema\\SchemaBuilder\\SchemaBuilder;
             use AsceticSoft\\RowcastSchema\\SchemaBuilder\\TableBuilder;
 
-            final class {$className} extends AbstractMigration
+            final class $className extends AbstractMigration
             {
                 public function up(SchemaBuilder \$schema): void
                 {
@@ -95,20 +95,20 @@ final class MigrationGenerator
     {
         return match (true) {
             $operation instanceof CreateTable => $reverse
-                ? [sprintf("\$schema->dropTable('%s');", $operation->table->name)]
+                ? [\sprintf("\$schema->dropTable('%s');", $operation->table->name)]
                 : $this->createTableLines($operation),
             $operation instanceof DropTable => $reverse
-                ? [sprintf("// TODO: recreate dropped table %s manually for rollback.", $operation->tableName)]
-                : [sprintf("\$schema->dropTable('%s');", $operation->tableName)],
+                ? [\sprintf('// TODO: recreate dropped table %s manually for rollback.', $operation->tableName)]
+                : [\sprintf("\$schema->dropTable('%s');", $operation->tableName)],
             $operation instanceof AddColumn => $reverse
-                ? [sprintf("\$schema->dropColumn('%s', '%s');", $operation->tableName, $operation->column->name)]
-                : [sprintf("\$schema->addColumn('%s', %s);", $operation->tableName, $this->columnExpression($operation->column))],
+                ? [\sprintf("\$schema->dropColumn('%s', '%s');", $operation->tableName, $operation->column->name)]
+                : [\sprintf("\$schema->addColumn('%s', %s);", $operation->tableName, $this->columnExpression($operation->column))],
             $operation instanceof DropColumn => $reverse
-                ? [sprintf("// TODO: restore dropped column %s.%s manually for rollback.", $operation->tableName, $operation->columnName)]
-                : [sprintf("\$schema->dropColumn('%s', '%s');", $operation->tableName, $operation->columnName)],
+                ? [\sprintf('// TODO: restore dropped column %s.%s manually for rollback.', $operation->tableName, $operation->columnName)]
+                : [\sprintf("\$schema->dropColumn('%s', '%s');", $operation->tableName, $operation->columnName)],
             $operation instanceof AlterColumn => $reverse
                 ? [
-                    sprintf(
+                    \sprintf(
                         "\$schema->alterColumn('%s', %s, %s);",
                         $operation->tableName,
                         $this->columnExpression($operation->newColumn),
@@ -116,7 +116,7 @@ final class MigrationGenerator
                     ),
                 ]
                 : [
-                    sprintf(
+                    \sprintf(
                         "\$schema->alterColumn('%s', %s, %s);",
                         $operation->tableName,
                         $this->columnExpression($operation->oldColumn),
@@ -125,8 +125,8 @@ final class MigrationGenerator
                 ],
             $operation instanceof AddIndex => [
                 $reverse
-                    ? sprintf("\$schema->dropIndex('%s', '%s');", $operation->tableName, $operation->index->name)
-                    : sprintf(
+                    ? \sprintf("\$schema->dropIndex('%s', '%s');", $operation->tableName, $operation->index->name)
+                    : \sprintf(
                         "\$schema->addIndex('%s', '%s', %s, %s);",
                         $operation->tableName,
                         $operation->index->name,
@@ -135,12 +135,12 @@ final class MigrationGenerator
                     ),
             ],
             $operation instanceof DropIndex => $reverse
-                ? [sprintf("// TODO: restore dropped index %s on %s manually for rollback.", $operation->indexName, $operation->tableName)]
-                : [sprintf("\$schema->dropIndex('%s', '%s');", $operation->tableName, $operation->indexName)],
+                ? [\sprintf('// TODO: restore dropped index %s on %s manually for rollback.', $operation->indexName, $operation->tableName)]
+                : [\sprintf("\$schema->dropIndex('%s', '%s');", $operation->tableName, $operation->indexName)],
             $operation instanceof AddForeignKey => [
                 $reverse
-                    ? sprintf("\$schema->dropForeignKey('%s', '%s');", $operation->tableName, $operation->foreignKey->name)
-                    : sprintf(
+                    ? \sprintf("\$schema->dropForeignKey('%s', '%s');", $operation->tableName, $operation->foreignKey->name)
+                    : \sprintf(
                         "\$schema->addForeignKey('%s', '%s', %s, '%s', %s, %s, %s);",
                         $operation->tableName,
                         $operation->foreignKey->name,
@@ -152,8 +152,8 @@ final class MigrationGenerator
                     ),
             ],
             $operation instanceof DropForeignKey => $reverse
-                ? [sprintf("// TODO: restore dropped foreign key %s on %s manually for rollback.", $operation->foreignKeyName, $operation->tableName)]
-                : [sprintf("\$schema->dropForeignKey('%s', '%s');", $operation->tableName, $operation->foreignKeyName)],
+                ? [\sprintf('// TODO: restore dropped foreign key %s on %s manually for rollback.', $operation->foreignKeyName, $operation->tableName)]
+                : [\sprintf("\$schema->dropForeignKey('%s', '%s');", $operation->tableName, $operation->foreignKeyName)],
             default => ['// Unsupported operation in generator.'],
         };
     }
@@ -164,7 +164,7 @@ final class MigrationGenerator
     private function createTableLines(CreateTable $operation): array
     {
         $lines = [
-            sprintf("\$schema->createTable('%s', function (TableBuilder \$table): void {", $operation->table->name),
+            \sprintf("\$schema->createTable('%s', function (TableBuilder \$table): void {", $operation->table->name),
         ];
 
         foreach ($operation->table->columns as $column) {
@@ -172,11 +172,11 @@ final class MigrationGenerator
         }
 
         if ($operation->table->primaryKey !== []) {
-            $lines[] = sprintf('    $table->primaryKey(%s);', var_export($operation->table->primaryKey, true));
+            $lines[] = \sprintf('    $table->primaryKey(%s);', var_export($operation->table->primaryKey, true));
         }
 
         foreach ($operation->table->indexes as $index) {
-            $lines[] = sprintf(
+            $lines[] = \sprintf(
                 '    $table->index(%s, %s, %s);',
                 var_export($index->name, true),
                 var_export($index->columns, true),
@@ -185,7 +185,7 @@ final class MigrationGenerator
         }
 
         foreach ($operation->table->foreignKeys as $fk) {
-            $lines[] = sprintf(
+            $lines[] = \sprintf(
                 '    $table->foreignKey(%s, %s, %s, %s, %s, %s);',
                 var_export($fk->name, true),
                 var_export($fk->columns, true),
@@ -204,14 +204,14 @@ final class MigrationGenerator
     private function columnBuilderLine(Column $column): string
     {
         $base = match ($column->type->value) {
-            'integer' => sprintf("\$table->integer('%s')", $column->name),
-            'string' => sprintf("\$table->string('%s', %d)", $column->name, $column->length ?? 255),
-            'text' => sprintf("\$table->text('%s')", $column->name),
-            'uuid' => sprintf("\$table->uuid('%s')", $column->name),
-            'datetime' => sprintf("\$table->datetime('%s')", $column->name),
-            'decimal' => sprintf("\$table->decimal('%s', %d, %d)", $column->name, $column->precision ?? 10, $column->scale ?? 2),
-            'boolean' => sprintf("\$table->boolean('%s')", $column->name),
-            default => sprintf("// TODO: unsupported column type %s for %s", $column->type->value, $column->name),
+            'integer' => \sprintf("\$table->integer('%s')", $column->name),
+            'string' => \sprintf("\$table->string('%s', %d)", $column->name, $column->length ?? 255),
+            'text' => \sprintf("\$table->text('%s')", $column->name),
+            'uuid' => \sprintf("\$table->uuid('%s')", $column->name),
+            'datetime' => \sprintf("\$table->datetime('%s')", $column->name),
+            'decimal' => \sprintf("\$table->decimal('%s', %d, %d)", $column->name, $column->precision ?? 10, $column->scale ?? 2),
+            'boolean' => \sprintf("\$table->boolean('%s')", $column->name),
+            default => \sprintf('// TODO: unsupported column type %s for %s', $column->type->value, $column->name),
         };
 
         if (str_starts_with($base, '//')) {
@@ -237,20 +237,20 @@ final class MigrationGenerator
     private function columnExpression(Column $column): string
     {
         $parts = [
-            "name: " . var_export($column->name, true),
-            "type: ColumnType::" . ucfirst($column->type->value),
-            "nullable: " . ($column->nullable ? 'true' : 'false'),
-            "default: " . var_export($column->default, true),
-            "primaryKey: " . ($column->primaryKey ? 'true' : 'false'),
-            "autoIncrement: " . ($column->autoIncrement ? 'true' : 'false'),
-            "length: " . var_export($column->length, true),
-            "precision: " . var_export($column->precision, true),
-            "scale: " . var_export($column->scale, true),
-            "unsigned: " . ($column->unsigned ? 'true' : 'false'),
-            "comment: " . var_export($column->comment, true),
-            "enumValues: " . var_export($column->enumValues, true),
+            'name: ' . var_export($column->name, true),
+            'type: ColumnType::' . ucfirst($column->type->value),
+            'nullable: ' . ($column->nullable ? 'true' : 'false'),
+            'default: ' . var_export($column->default, true),
+            'primaryKey: ' . ($column->primaryKey ? 'true' : 'false'),
+            'autoIncrement: ' . ($column->autoIncrement ? 'true' : 'false'),
+            'length: ' . var_export($column->length, true),
+            'precision: ' . var_export($column->precision, true),
+            'scale: ' . var_export($column->scale, true),
+            'unsigned: ' . ($column->unsigned ? 'true' : 'false'),
+            'comment: ' . var_export($column->comment, true),
+            'enumValues: ' . var_export($column->enumValues, true),
         ];
 
-        return "new Column(" . implode(', ', $parts) . ")";
+        return 'new Column(' . implode(', ', $parts) . ')';
     }
 }

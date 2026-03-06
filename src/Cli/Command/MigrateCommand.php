@@ -16,7 +16,7 @@ final readonly class MigrateCommand implements CommandInterface
     public function execute(array $args, Config $config): int
     {
         $count = $this->runner->migrate($config->migrationsPath);
-        echo sprintf("Applied migrations: %d\n", $count);
+        echo \sprintf("Applied migrations: %d\n", $count);
         return 0;
     }
 }

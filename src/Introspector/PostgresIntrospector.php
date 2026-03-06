@@ -38,12 +38,12 @@ final readonly class PostgresIntrospector implements IntrospectorInterface
         $tables = [];
         /** @var array<string, mixed> $row */
         foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
-            $tableName = is_string($row['table_name'] ?? null) ? $row['table_name'] : '';
-            $columnName = is_string($row['column_name'] ?? null) ? $row['column_name'] : '';
-            $udtName = is_string($row['udt_name'] ?? null) ? $row['udt_name'] : '';
-            $constraintType = is_string($row['constraint_type'] ?? null) ? $row['constraint_type'] : '';
-            $isNullable = is_string($row['is_nullable'] ?? null) ? $row['is_nullable'] : 'NO';
-            $columnDefault = is_string($row['column_default'] ?? null) ? $row['column_default'] : null;
+            $tableName = \is_string($row['table_name'] ?? null) ? $row['table_name'] : '';
+            $columnName = \is_string($row['column_name'] ?? null) ? $row['column_name'] : '';
+            $udtName = \is_string($row['udt_name'] ?? null) ? $row['udt_name'] : '';
+            $constraintType = \is_string($row['constraint_type'] ?? null) ? $row['constraint_type'] : '';
+            $isNullable = \is_string($row['is_nullable'] ?? null) ? $row['is_nullable'] : 'NO';
+            $columnDefault = \is_string($row['column_default'] ?? null) ? $row['column_default'] : null;
             if ($tableName === '' || $columnName === '' || $udtName === '') {
                 continue;
             }
@@ -66,7 +66,7 @@ final readonly class PostgresIntrospector implements IntrospectorInterface
                 nullable: $isNullable === 'YES',
                 default: $columnDefault,
                 primaryKey: $isPrimary,
-                autoIncrement: is_string($columnDefault) && str_contains($columnDefault, 'nextval'),
+                autoIncrement: \is_string($columnDefault) && str_contains($columnDefault, 'nextval'),
             );
         }
 

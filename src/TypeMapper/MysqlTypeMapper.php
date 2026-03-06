@@ -15,10 +15,10 @@ final class MysqlTypeMapper implements TypeMapperInterface
             ColumnType::Integer => 'INT',
             ColumnType::Smallint => 'SMALLINT',
             ColumnType::Bigint => 'BIGINT',
-            ColumnType::String => sprintf('VARCHAR(%d)', $column->length),
+            ColumnType::String => \sprintf('VARCHAR(%d)', $column->length),
             ColumnType::Text => 'TEXT',
             ColumnType::Boolean => 'TINYINT(1)',
-            ColumnType::Decimal => sprintf('DECIMAL(%d,%d)', $column->precision, $column->scale),
+            ColumnType::Decimal => \sprintf('DECIMAL(%d,%d)', $column->precision, $column->scale),
             ColumnType::Float => 'FLOAT',
             ColumnType::Double => 'DOUBLE',
             ColumnType::Datetime => 'DATETIME',
@@ -28,7 +28,7 @@ final class MysqlTypeMapper implements TypeMapperInterface
             ColumnType::Uuid => 'CHAR(36)',
             ColumnType::Json => 'JSON',
             ColumnType::Binary => 'BLOB',
-            ColumnType::Enum => sprintf(
+            ColumnType::Enum => \sprintf(
                 'ENUM(%s)',
                 implode(', ', array_map(static fn (string $v): string => "'" . str_replace("'", "\\'", $v) . "'", $column->enumValues)),
             ),

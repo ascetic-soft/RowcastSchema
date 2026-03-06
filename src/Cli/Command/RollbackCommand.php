@@ -23,7 +23,7 @@ final readonly class RollbackCommand implements CommandInterface
         }
 
         $count = $this->runner->rollback($config->migrationsPath, $step);
-        echo sprintf("Rolled back migrations: %d\n", $count);
+        echo \sprintf("Rolled back migrations: %d\n", $count);
         return 0;
     }
 }

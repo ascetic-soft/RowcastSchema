@@ -48,7 +48,7 @@ final readonly class MigrationRunner
         rsort($applied, SORT_STRING);
 
         $count = 0;
-        foreach (array_slice($applied, 0, max(0, $step)) as $version) {
+        foreach (\array_slice($applied, 0, max(0, $step)) as $version) {
             $filePath = $all[$version] ?? null;
             if ($filePath === null) {
                 continue;
@@ -85,12 +85,12 @@ final readonly class MigrationRunner
         }
 
         if (!class_exists($version)) {
-            throw new \RuntimeException(sprintf('Migration class "%s" was not found in %s.', $version, $filePath));
+            throw new \RuntimeException(\sprintf('Migration class "%s" was not found in %s.', $version, $filePath));
         }
 
         $migration = new $version();
         if (!$migration instanceof MigrationInterface) {
-            throw new \RuntimeException(sprintf('Migration "%s" must implement MigrationInterface.', $version));
+            throw new \RuntimeException(\sprintf('Migration "%s" must implement MigrationInterface.', $version));
         }
 
         return $migration;

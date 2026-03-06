@@ -30,13 +30,13 @@ abstract readonly class AbstractPlatform implements PlatformInterface
     {
         return match (true) {
             $operation instanceof CreateTable => $this->compileCreateTable($operation->table),
-            $operation instanceof DropTable => [sprintf('DROP TABLE %s', $this->quoteIdentifier($operation->tableName))],
-            $operation instanceof AddColumn => [sprintf(
+            $operation instanceof DropTable => [\sprintf('DROP TABLE %s', $this->quoteIdentifier($operation->tableName))],
+            $operation instanceof AddColumn => [\sprintf(
                 'ALTER TABLE %s ADD COLUMN %s',
                 $this->quoteIdentifier($operation->tableName),
                 $this->compileColumnDefinition($operation->column),
             )],
-            $operation instanceof DropColumn => [sprintf(
+            $operation instanceof DropColumn => [\sprintf(
                 'ALTER TABLE %s DROP COLUMN %s',
                 $this->quoteIdentifier($operation->tableName),
                 $this->quoteIdentifier($operation->columnName),
@@ -61,13 +61,13 @@ abstract readonly class AbstractPlatform implements PlatformInterface
         }
 
         if ($table->primaryKey !== []) {
-            $parts[] = sprintf(
+            $parts[] = \sprintf(
                 'PRIMARY KEY (%s)',
                 implode(', ', array_map(fn (string $c): string => $this->quoteIdentifier($c), $table->primaryKey)),
             );
         }
 
-        $sql = sprintf(
+        $sql = \sprintf(
             'CREATE TABLE %s (%s)',
             $this->quoteIdentifier($table->name),
             implode(', ', $parts),
@@ -86,7 +86,7 @@ abstract readonly class AbstractPlatform implements PlatformInterface
 
     protected function compileColumnDefinition(Column $column): string
     {
-        $sql = sprintf('%s %s', $this->quoteIdentifier($column->name), $this->typeMapper->toSqlType($column));
+        $sql = \sprintf('%s %s', $this->quoteIdentifier($column->name), $this->typeMapper->toSqlType($column));
         if ($column->unsigned) {
             $sql .= ' UNSIGNED';
         }
@@ -94,7 +94,7 @@ abstract readonly class AbstractPlatform implements PlatformInterface
             $sql .= ' NOT NULL';
         }
         if ($column->default !== null) {
-            $sql .= sprintf(' DEFAULT %s', $this->compileDefaultValue($column->default));
+            $sql .= \sprintf(' DEFAULT %s', $this->compileDefaultValue($column->default));
         }
         if ($column->autoIncrement) {
             $sql .= ' AUTO_INCREMENT';
@@ -108,7 +108,7 @@ abstract readonly class AbstractPlatform implements PlatformInterface
         $kind = $index->unique ? 'UNIQUE INDEX' : 'INDEX';
         $columns = implode(', ', array_map(fn (string $c): string => $this->quoteIdentifier($c), $index->columns));
 
-        return sprintf(
+        return \sprintf(
             'CREATE %s %s ON %s (%s)',
             $kind,
             $this->quoteIdentifier($index->name),
@@ -119,7 +119,7 @@ abstract readonly class AbstractPlatform implements PlatformInterface
 
     protected function compileDropIndex(string $tableName, string $indexName): string
     {
-        return sprintf('DROP INDEX %s ON %s', $this->quoteIdentifier($indexName), $this->quoteIdentifier($tableName));
+        return \sprintf('DROP INDEX %s ON %s', $this->quoteIdentifier($indexName), $this->quoteIdentifier($tableName));
     }
 
     protected function compileAddForeignKey(string $tableName, ForeignKey $foreignKey): string
@@ -127,7 +127,7 @@ abstract readonly class AbstractPlatform implements PlatformInterface
         $columns = implode(', ', array_map(fn (string $c): string => $this->quoteIdentifier($c), $foreignKey->columns));
         $referenceColumns = implode(', ', array_map(fn (string $c): string => $this->quoteIdentifier($c), $foreignKey->referenceColumns));
 
-        $sql = sprintf(
+        $sql = \sprintf(
             'ALTER TABLE %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s (%s)',
             $this->quoteIdentifier($tableName),
             $this->quoteIdentifier($foreignKey->name),
@@ -148,7 +148,7 @@ abstract readonly class AbstractPlatform implements PlatformInterface
 
     protected function compileDropForeignKey(string $tableName, string $foreignKeyName): string
     {
-        return sprintf(
+        return \sprintf(
             'ALTER TABLE %s DROP FOREIGN KEY %s',
             $this->quoteIdentifier($tableName),
             $this->quoteIdentifier($foreignKeyName),
@@ -161,7 +161,7 @@ abstract readonly class AbstractPlatform implements PlatformInterface
     protected function compileAlterColumn(AlterColumn $operation): array
     {
         return [
-            sprintf(
+            \sprintf(
                 'ALTER TABLE %s MODIFY COLUMN %s',
                 $this->quoteIdentifier($operation->tableName),
                 $this->compileColumnDefinition($operation->newColumn),
@@ -173,13 +173,13 @@ abstract readonly class AbstractPlatform implements PlatformInterface
 
     private function compileDefaultValue(mixed $value): string
     {
-        if (is_int($value) || is_float($value)) {
+        if (\is_int($value) || \is_float($value)) {
             return (string)$value;
         }
-        if (is_bool($value)) {
+        if (\is_bool($value)) {
             return $value ? '1' : '0';
         }
-        if (!is_string($value)) {
+        if (!\is_string($value)) {
             throw new \InvalidArgumentException('Default column value must be scalar.');
         }
         if (strtoupper($value) === 'CURRENT_TIMESTAMP') {

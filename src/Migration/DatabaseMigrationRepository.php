@@ -15,18 +15,18 @@ final readonly class DatabaseMigrationRepository implements MigrationRepositoryI
     public function ensureTable(): void
     {
         $driverRaw = $this->pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
-        if (!is_string($driverRaw) || $driverRaw === '') {
+        if (!\is_string($driverRaw) || $driverRaw === '') {
             throw new \RuntimeException('Unable to detect PDO driver name.');
         }
         $driver = $driverRaw;
-        $versionType = $driver === 'pgsql' ? 'VARCHAR(255)' : 'VARCHAR(255)';
+        $versionType = 'VARCHAR(255)';
         $datetimeType = match ($driver) {
             'pgsql' => 'TIMESTAMP',
             'sqlite' => 'TEXT',
             default => 'DATETIME',
         };
 
-        $sql = sprintf(
+        $sql = \sprintf(
             'CREATE TABLE IF NOT EXISTS %s (version %s PRIMARY KEY, applied_at %s NOT NULL)',
             $this->tableName,
             $versionType,
@@ -38,14 +38,14 @@ final readonly class DatabaseMigrationRepository implements MigrationRepositoryI
 
     public function getApplied(): array
     {
-        $stmt = $this->pdo->query(sprintf('SELECT version FROM %s ORDER BY version', $this->tableName));
+        $stmt = $this->pdo->query(\sprintf('SELECT version FROM %s ORDER BY version', $this->tableName));
         if ($stmt === false) {
             return [];
         }
 
         $versions = [];
         foreach ($stmt->fetchAll(\PDO::FETCH_COLUMN) as $value) {
-            if (is_string($value)) {
+            if (\is_string($value)) {
                 $versions[] = $value;
             }
         }
@@ -55,7 +55,7 @@ final readonly class DatabaseMigrationRepository implements MigrationRepositoryI
 
     public function markApplied(string $version): void
     {
-        $stmt = $this->pdo->prepare(sprintf(
+        $stmt = $this->pdo->prepare(\sprintf(
             'INSERT INTO %s (version, applied_at) VALUES (:version, :applied_at)',
             $this->tableName,
         ));
@@ -67,7 +67,7 @@ final readonly class DatabaseMigrationRepository implements MigrationRepositoryI
 
     public function markRolledBack(string $version): void
     {
-        $stmt = $this->pdo->prepare(sprintf('DELETE FROM %s WHERE version = :version', $this->tableName));
+        $stmt = $this->pdo->prepare(\sprintf('DELETE FROM %s WHERE version = :version', $this->tableName));
         $stmt->execute(['version' => $version]);
     }
 }

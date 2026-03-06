@@ -27,7 +27,7 @@ final readonly class DiffCommand implements CommandInterface
         $current = $introspector->introspect($config->pdo);
         $operations = $this->differ->diff($current, $target);
 
-        if (in_array('--dry-run', $args, true)) {
+        if (\in_array('--dry-run', $args, true)) {
             if ($operations === []) {
                 echo "No schema changes detected.\n";
                 return 0;
@@ -44,7 +44,7 @@ final readonly class DiffCommand implements CommandInterface
         }
 
         $file = $this->generator->generate($operations, $config->migrationsPath);
-        echo sprintf("Migration generated: %s\n", $file);
+        echo \sprintf("Migration generated: %s\n", $file);
         return 0;
     }
 }

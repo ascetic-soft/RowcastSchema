@@ -29,9 +29,9 @@ final readonly class SqliteIntrospector implements IntrospectorInterface
             $columns = [];
             $pk = [];
 
-            $colsStmt = $pdo->query(sprintf("PRAGMA table_info('%s')", str_replace("'", "''", $tableName)));
+            $colsStmt = $pdo->query(\sprintf("PRAGMA table_info('%s')", str_replace("'", "''", $tableName)));
             if ($colsStmt === false) {
-                throw new \RuntimeException(sprintf('Failed to introspect sqlite columns for %s.', $tableName));
+                throw new \RuntimeException(\sprintf('Failed to introspect sqlite columns for %s.', $tableName));
             }
 
             /** @var array{name: string, type: string, notnull: int, dflt_value: mixed, pk: int} $col */

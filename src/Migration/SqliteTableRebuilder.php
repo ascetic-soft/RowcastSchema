@@ -9,6 +9,7 @@ use AsceticSoft\RowcastSchema\Diff\Operation\AlterColumn;
 use AsceticSoft\RowcastSchema\Diff\Operation\DropColumn;
 use AsceticSoft\RowcastSchema\Diff\Operation\DropForeignKey;
 use AsceticSoft\RowcastSchema\Diff\Operation\OperationInterface;
+use AsceticSoft\RowcastSchema\Schema\Column;
 use AsceticSoft\RowcastSchema\Schema\ForeignKey;
 use AsceticSoft\RowcastSchema\TypeMapper\SqliteTypeMapper;
 
@@ -47,21 +48,21 @@ final readonly class SqliteTableRebuilder
 
         if ($operation instanceof AlterColumn) {
             if (!isset($columns[$operation->oldColumn->name])) {
-                throw new \RuntimeException(sprintf('Column "%s.%s" does not exist.', $tableName, $operation->oldColumn->name));
+                throw new \RuntimeException(\sprintf('Column "%s.%s" does not exist.', $tableName, $operation->oldColumn->name));
             }
             $columns[$operation->newColumn->name] = $this->columnFromSchemaColumn($operation->newColumn);
             if ($operation->oldColumn->name !== $operation->newColumn->name) {
                 unset($columns[$operation->oldColumn->name]);
                 foreach ($indexes as &$index) {
                     $index['columns'] = array_map(
-                        fn (string $col): string => $col === $operation->oldColumn->name ? $operation->newColumn->name : $col,
+                        static fn (string $col): string => $col === $operation->oldColumn->name ? $operation->newColumn->name : $col,
                         $index['columns'],
                     );
                 }
                 unset($index);
                 foreach ($foreignKeys as &$fk) {
                     $fk['columns'] = array_map(
-                        fn (string $col): string => $col === $operation->oldColumn->name ? $operation->newColumn->name : $col,
+                        static fn (string $col): string => $col === $operation->oldColumn->name ? $operation->newColumn->name : $col,
                         $fk['columns'],
                     );
                 }
@@ -73,11 +74,11 @@ final readonly class SqliteTableRebuilder
             unset($columns[$operation->columnName]);
             $indexes = array_values(array_filter(
                 $indexes,
-                static fn (array $index): bool => !in_array($operation->columnName, $index['columns'], true),
+                static fn (array $index): bool => !\in_array($operation->columnName, $index['columns'], true),
             ));
             $foreignKeys = array_values(array_filter(
                 $foreignKeys,
-                static fn (array $fk): bool => !in_array($operation->columnName, $fk['columns'], true),
+                static fn (array $fk): bool => !\in_array($operation->columnName, $fk['columns'], true),
             ));
         }
 
@@ -87,11 +88,11 @@ final readonly class SqliteTableRebuilder
 
         if ($operation instanceof DropForeignKey) {
             if ($operation->foreignKey === null) {
-                if (count($foreignKeys) === 1) {
+                if (\count($foreignKeys) === 1) {
                     $foreignKeys = [];
                 } else {
                     throw new \RuntimeException(
-                        sprintf(
+                        \sprintf(
                             'SQLite drop foreign key "%s" requires foreign key metadata when table has multiple foreign keys.',
                             $operation->foreignKeyName,
                         ),
@@ -111,7 +112,7 @@ final readonly class SqliteTableRebuilder
         }
 
         if ($columns === []) {
-            throw new \RuntimeException(sprintf('Cannot rebuild table "%s" without columns.', $tableName));
+            throw new \RuntimeException(\sprintf('Cannot rebuild table "%s" without columns.', $tableName));
         }
 
         $this->rebuildTable($pdo, $tableName, $columns, $foreignKeys, $indexes, array_keys($state['columns']));
@@ -134,9 +135,9 @@ final readonly class SqliteTableRebuilder
     private function readState(\PDO $pdo, string $tableName): array
     {
         $quoted = str_replace("'", "''", $tableName);
-        $columnsStmt = $pdo->query(sprintf("PRAGMA table_info('%s')", $quoted));
+        $columnsStmt = $pdo->query(\sprintf("PRAGMA table_info('%s')", $quoted));
         if ($columnsStmt === false) {
-            throw new \RuntimeException(sprintf('Failed to read SQLite table info for %s.', $tableName));
+            throw new \RuntimeException(\sprintf('Failed to read SQLite table info for %s.', $tableName));
         }
         $columns = [];
         /** @var array{name: string, type: string, notnull: int, dflt_value: mixed, pk: int} $row */
@@ -150,9 +151,9 @@ final readonly class SqliteTableRebuilder
             ];
         }
 
-        $fkStmt = $pdo->query(sprintf("PRAGMA foreign_key_list('%s')", $quoted));
+        $fkStmt = $pdo->query(\sprintf("PRAGMA foreign_key_list('%s')", $quoted));
         if ($fkStmt === false) {
-            throw new \RuntimeException(sprintf('Failed to read SQLite foreign keys for %s.', $tableName));
+            throw new \RuntimeException(\sprintf('Failed to read SQLite foreign keys for %s.', $tableName));
         }
         $fkGroups = [];
         /** @var array{id: int, seq: int, table: string, from: string, to: string, on_update: string, on_delete: string} $fkRow */
@@ -160,7 +161,7 @@ final readonly class SqliteTableRebuilder
             $id = (int)$fkRow['id'];
             if (!isset($fkGroups[$id])) {
                 $fkGroups[$id] = [
-                    'name' => sprintf('fk_%s_%d', $tableName, $id),
+                    'name' => \sprintf('fk_%s_%d', $tableName, $id),
                     'columns' => [],
                     'referenceTable' => (string)$fkRow['table'],
                     'referenceColumns' => [],
@@ -172,9 +173,9 @@ final readonly class SqliteTableRebuilder
             $fkGroups[$id]['referenceColumns'][] = (string)$fkRow['to'];
         }
 
-        $idxStmt = $pdo->query(sprintf("PRAGMA index_list('%s')", $quoted));
+        $idxStmt = $pdo->query(\sprintf("PRAGMA index_list('%s')", $quoted));
         if ($idxStmt === false) {
-            throw new \RuntimeException(sprintf('Failed to read SQLite indexes for %s.', $tableName));
+            throw new \RuntimeException(\sprintf('Failed to read SQLite indexes for %s.', $tableName));
         }
         $indexes = [];
         /** @var array{name: string, unique: int, origin: string} $idx */
@@ -183,7 +184,7 @@ final readonly class SqliteTableRebuilder
                 continue;
             }
             $idxName = (string)$idx['name'];
-            $idxInfoStmt = $pdo->query(sprintf("PRAGMA index_info('%s')", str_replace("'", "''", $idxName)));
+            $idxInfoStmt = $pdo->query(\sprintf("PRAGMA index_info('%s')", str_replace("'", "''", $idxName)));
             if ($idxInfoStmt === false) {
                 continue;
             }
@@ -220,7 +221,7 @@ final readonly class SqliteTableRebuilder
         array $indexes,
         array $oldColumnOrder,
     ): void {
-        $tmp = sprintf('__rowcast_tmp_%s_%s', $tableName, substr(sha1((string)microtime(true)), 0, 8));
+        $tmp = \sprintf('__rowcast_tmp_%s_%s', $tableName, substr(sha1((string)microtime(true)), 0, 8));
         $quotedTable = $this->quoteIdentifier($tableName);
         $quotedTmp = $this->quoteIdentifier($tmp);
 
@@ -235,7 +236,7 @@ final readonly class SqliteTableRebuilder
 
         $parts = [];
         foreach ($columns as $column) {
-            $part = sprintf('%s %s', $this->quoteIdentifier($column['name']), $column['type']);
+            $part = \sprintf('%s %s', $this->quoteIdentifier($column['name']), $column['type']);
             if ($column['notnull']) {
                 $part .= ' NOT NULL';
             }
@@ -252,7 +253,7 @@ final readonly class SqliteTableRebuilder
         foreach ($foreignKeys as $fk) {
             $cols = implode(', ', array_map([$this, 'quoteIdentifier'], $fk['columns']));
             $refCols = implode(', ', array_map([$this, 'quoteIdentifier'], $fk['referenceColumns']));
-            $fkSql = sprintf(
+            $fkSql = \sprintf(
                 'FOREIGN KEY (%s) REFERENCES %s (%s)',
                 $cols,
                 $this->quoteIdentifier($fk['referenceTable']),
@@ -269,17 +270,17 @@ final readonly class SqliteTableRebuilder
 
         $pdo->exec('PRAGMA foreign_keys = OFF');
         try {
-            $pdo->exec(sprintf('CREATE TABLE %s (%s)', $quotedTmp, implode(', ', $parts)));
+            $pdo->exec(\sprintf('CREATE TABLE %s (%s)', $quotedTmp, implode(', ', $parts)));
 
             $newColumns = array_keys($columns);
             $copyColumns = array_values(array_intersect($oldColumnOrder, $newColumns));
             if ($copyColumns !== []) {
                 $quotedCopy = implode(', ', array_map([$this, 'quoteIdentifier'], $copyColumns));
-                $pdo->exec(sprintf('INSERT INTO %s (%s) SELECT %s FROM %s', $quotedTmp, $quotedCopy, $quotedCopy, $quotedTable));
+                $pdo->exec(\sprintf('INSERT INTO %s (%s) SELECT %s FROM %s', $quotedTmp, $quotedCopy, $quotedCopy, $quotedTable));
             }
 
-            $pdo->exec(sprintf('DROP TABLE %s', $quotedTable));
-            $pdo->exec(sprintf('ALTER TABLE %s RENAME TO %s', $quotedTmp, $quotedTable));
+            $pdo->exec(\sprintf('DROP TABLE %s', $quotedTable));
+            $pdo->exec(\sprintf('ALTER TABLE %s RENAME TO %s', $quotedTmp, $quotedTable));
 
             foreach ($indexes as $index) {
                 if ($index['columns'] === []) {
@@ -291,7 +292,7 @@ final readonly class SqliteTableRebuilder
                 }
                 $idxCols = implode(', ', array_map([$this, 'quoteIdentifier'], $index['columns']));
                 $kind = $index['unique'] ? 'UNIQUE INDEX' : 'INDEX';
-                $pdo->exec(sprintf(
+                $pdo->exec(\sprintf(
                     'CREATE %s %s ON %s (%s)',
                     $kind,
                     $this->quoteIdentifier($index['name']),
@@ -307,7 +308,7 @@ final readonly class SqliteTableRebuilder
     /**
      * @return array{name: string, type: string, notnull: bool, default: mixed, pk: int}
      */
-    private function columnFromSchemaColumn(\AsceticSoft\RowcastSchema\Schema\Column $column): array
+    private function columnFromSchemaColumn(Column $column): array
     {
         return [
             'name' => $column->name,
@@ -335,13 +336,13 @@ final readonly class SqliteTableRebuilder
 
     private function normalizeDefault(mixed $value): string
     {
-        if (is_int($value) || is_float($value)) {
+        if (\is_int($value) || \is_float($value)) {
             return (string)$value;
         }
-        if (is_bool($value)) {
+        if (\is_bool($value)) {
             return $value ? '1' : '0';
         }
-        if (!is_string($value)) {
+        if (!\is_string($value)) {
             throw new \InvalidArgumentException('Default value must be scalar.');
         }
         if (strtoupper($value) === 'CURRENT_TIMESTAMP') {
@@ -357,10 +358,10 @@ final readonly class SqliteTableRebuilder
 
     private function quoteRawDefault(mixed $default): string
     {
-        if (is_int($default) || is_float($default)) {
+        if (\is_int($default) || \is_float($default)) {
             return (string)$default;
         }
-        if (!is_string($default)) {
+        if (!\is_string($default)) {
             throw new \RuntimeException('Unsupported SQLite default value type during table rebuild.');
         }
 
