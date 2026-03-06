@@ -19,6 +19,14 @@ final class SqliteTypeMapperTest extends TestCase
         self::assertSame('TEXT', $mapper->toSqlType($column));
     }
 
+    public function testMapsTimestamptzToSqlType(): void
+    {
+        $mapper = new SqliteTypeMapper();
+        $column = new Column('created_at', ColumnType::Timestamptz);
+
+        self::assertSame('TEXT', $mapper->toSqlType($column));
+    }
+
     public function testMapsSqlTypeToAbstract(): void
     {
         $mapper = new SqliteTypeMapper();

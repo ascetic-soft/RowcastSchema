@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AsceticSoft\RowcastSchema\Tests\Parser;
 
 use AsceticSoft\RowcastSchema\Parser\YamlSchemaParser;
+use AsceticSoft\RowcastSchema\Schema\ColumnType;
 use PHPUnit\Framework\TestCase;
 
 final class YamlSchemaParserTest extends TestCase
@@ -32,6 +33,10 @@ final class YamlSchemaParserTest extends TestCase
                   idx_users_email:
                     columns: [email]
                     unique: true
+              events:
+                columns:
+                  occurred_at:
+                    type: timestamptz
             YAML;
 
         $file = tempnam(sys_get_temp_dir(), 'schema_');
@@ -47,6 +52,11 @@ final class YamlSchemaParserTest extends TestCase
             self::assertNotNull($users);
             self::assertTrue($users->hasColumn('email'));
             self::assertArrayHasKey('idx_users_email', $users->indexes);
+            $events = $schema->getTable('events');
+            self::assertNotNull($events);
+            $occurredAt = $events->getColumn('occurred_at');
+            self::assertNotNull($occurredAt);
+            self::assertSame(ColumnType::Timestamptz, $occurredAt->type);
         } finally {
             @unlink($file);
         }

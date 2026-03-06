@@ -29,6 +29,7 @@ final class MysqlTypeMapper implements TypeMapperInterface
             ColumnType::Date => 'DATE',
             ColumnType::Time => 'TIME',
             ColumnType::Timestamp => 'TIMESTAMP',
+            ColumnType::Timestamptz => 'TIMESTAMP',
             ColumnType::Uuid => 'CHAR(36)',
             ColumnType::Json => 'JSON',
             ColumnType::Binary => 'BLOB',

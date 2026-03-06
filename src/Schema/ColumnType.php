@@ -19,6 +19,7 @@ enum ColumnType: string
     case Date = 'date';
     case Time = 'time';
     case Timestamp = 'timestamp';
+    case Timestamptz = 'timestamptz';
     case Uuid = 'uuid';
     case Json = 'json';
     case Binary = 'binary';

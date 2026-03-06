@@ -25,6 +25,7 @@ final class SqliteTypeMapper implements TypeMapperInterface
             ColumnType::Uuid,
             ColumnType::Enum,
             ColumnType::Datetime,
+            ColumnType::Timestamptz,
             ColumnType::Date,
             ColumnType::Time,
             ColumnType::Timestamp,

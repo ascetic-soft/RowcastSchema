@@ -204,6 +204,7 @@ final class ArraySchemaBuilder
 
         return match ($normalized) {
             'jsonb' => ColumnType::Json->value,
+            'timestamp with time zone' => ColumnType::Timestamptz->value,
             default => $normalized,
         };
     }
