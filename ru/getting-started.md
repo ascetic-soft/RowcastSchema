@@ -42,7 +42,7 @@ composer require symfony/yaml
 
 ## Конфигурация
 
-Создайте `rowcast-schema.php` в корне проекта:
+Создайте `rowcast-schema.php` в корне проекта (путь по умолчанию):
 
 ```php
 <?php
@@ -58,6 +58,17 @@ return [
 ];
 ```
 
+Конфиг можно хранить и в кастомной директории:
+
+```bash
+vendor/bin/rowcast-schema --config=database/rowcast-schema.php diff
+```
+
+Конфиг-файл может возвращать:
+
+- массив (классический режим),
+- или фабрику `static function (string $projectDir): array` (удобно для env из корня проекта).
+
 | Ключ | Описание |
 |:-----|:---------|
 | `connection.dsn` | Строка подключения PDO |
@@ -66,6 +77,8 @@ return [
 | `connection.options` | Опциональный массив PDO-опций |
 | `schema` | Путь к файлу схемы (`.php`, `.yaml`, `.yml`) |
 | `migrations` | Директория для миграций |
+| `migration_table` | Таблица учёта применённых миграций (по умолчанию: `_rowcast_migrations`) |
+| `ignore_tables` | Regex/callback-правила исключения таблиц из diff |
 
 ---
 
@@ -119,6 +132,12 @@ vendor/bin/rowcast-schema diff
 
 ```bash
 vendor/bin/rowcast-schema diff --dry-run
+```
+
+Глобальный путь к конфигу можно передать для любой команды:
+
+```bash
+vendor/bin/rowcast-schema --config=database/rowcast-schema.php status
 ```
 
 ---

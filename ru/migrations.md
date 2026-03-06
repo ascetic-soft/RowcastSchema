@@ -30,6 +30,7 @@ parent: Русский
 declare(strict_types=1);
 
 use AsceticSoft\RowcastSchema\Migration\AbstractMigration;
+use AsceticSoft\RowcastSchema\Schema\ColumnType;
 use AsceticSoft\RowcastSchema\SchemaBuilder\SchemaBuilder;
 use AsceticSoft\RowcastSchema\SchemaBuilder\TableBuilder;
 
@@ -38,9 +39,9 @@ final class Migration_20260306_143022_CreateUsersTable extends AbstractMigration
     public function up(SchemaBuilder $schema): void
     {
         $schema->createTable('users', function (TableBuilder $table) {
-            $table->integer('id')->primaryKey()->autoIncrement();
-            $table->string('email', 255);
-            $table->datetime('created_at')->default('CURRENT_TIMESTAMP');
+            $table->column('id', 'integer')->primaryKey()->autoIncrement();
+            $table->column('email', 'string'); // длина по умолчанию: 255
+            $table->column('created_at', ColumnType::Datetime)->default('CURRENT_TIMESTAMP');
         });
         $schema->addIndex('users', 'idx_users_email', ['email'], unique: true);
     }
@@ -108,13 +109,20 @@ interface MigrationInterface
 
 ```php
 $schema->createTable('products', function (TableBuilder $table) {
-    $table->uuid('id')->primaryKey();
-    $table->string('name', 255);
-    $table->decimal('price', 10, 2)->unsigned();
-    $table->text('description')->nullable();
-    $table->datetime('created_at')->default('CURRENT_TIMESTAMP');
+    $table->column('id', 'uuid')->primaryKey();
+    $table->column('name', 'string'); // длина по умолчанию: 255
+    $table->column('price', 'decimal')->precision(10, 2)->unsigned();
+    $table->column('description', 'text')->nullable();
+    $table->column('created_at', ColumnType::Datetime)->default('CURRENT_TIMESTAMP');
+    $table->column('meta', 'jsonb'); // кастомный raw-тип БД
 });
 ```
+
+`column()` принимает:
+
+- enum `ColumnType` (`ColumnType::String`, `ColumnType::Datetime`, ...),
+- известные строковые абстрактные типы (`'string'`, `'integer'`, ...),
+- любые кастомные raw-типы БД (`'jsonb'`, `'citext'`, `'numeric(20,6)'`, ...).
 
 ---
 

@@ -43,7 +43,7 @@ composer require symfony/yaml
 
 ## Configuration
 
-Create `rowcast-schema.php` in your project root:
+Create `rowcast-schema.php` in your project root (default location):
 
 ```php
 <?php
@@ -59,6 +59,17 @@ return [
 ];
 ```
 
+You can also keep config in a custom directory:
+
+```bash
+vendor/bin/rowcast-schema --config=database/rowcast-schema.php diff
+```
+
+The config file may return:
+
+- an array (classic mode),
+- or a factory closure `static function (string $projectDir): array` (useful for resolving environment variables from project root).
+
 | Key | Description |
 |:----|:-----------|
 | `connection.dsn` | PDO connection string |
@@ -67,6 +78,8 @@ return [
 | `connection.options` | Optional PDO options array |
 | `schema` | Path to schema file (`.php`, `.yaml`, or `.yml`) |
 | `migrations` | Directory for generated migration files |
+| `migration_table` | Table to store applied migration versions (default: `_rowcast_migrations`) |
+| `ignore_tables` | Regex/callback rules for excluding tables from diff |
 
 ---
 
@@ -120,6 +133,12 @@ Preview changes without generating a file:
 
 ```bash
 vendor/bin/rowcast-schema diff --dry-run
+```
+
+You can pass global config path to any command:
+
+```bash
+vendor/bin/rowcast-schema --config=database/rowcast-schema.php status
 ```
 
 ---

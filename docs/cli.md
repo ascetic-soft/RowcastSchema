@@ -21,11 +21,17 @@ All available commands for `vendor/bin/rowcast-schema`.
 
 ## Overview
 
-The CLI reads configuration from `rowcast-schema.php` in the current working directory.
+By default, the CLI reads configuration from `rowcast-schema.php` in the current working directory.
 
 ```bash
 vendor/bin/rowcast-schema <command> [options]
 ```
+
+### Global options
+
+| Option | Description |
+|:-------|:-----------|
+| `--config=path` / `--config path` | Use a custom config file path |
 
 ---
 

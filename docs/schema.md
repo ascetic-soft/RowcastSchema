@@ -74,7 +74,7 @@ YAML support is optional. Install it with `composer require symfony/yaml`. If th
 | `integer` | INT / INTEGER |
 | `smallint` | SMALLINT |
 | `bigint` | BIGINT |
-| `string` | VARCHAR (requires `length`) |
+| `string` | VARCHAR (default `length`: `255`) |
 | `text` | TEXT |
 | `boolean` | BOOLEAN / TINYINT(1) |
 | `decimal` | DECIMAL (requires `precision`, `scale`) |
@@ -100,7 +100,7 @@ YAML support is optional. Install it with `composer require symfony/yaml`. If th
 | `default` | mixed | `null` | Default value (or `CURRENT_TIMESTAMP`) |
 | `primaryKey` | bool | `false` | Shortcut for single-column PK |
 | `autoIncrement` | bool | `false` | Auto-increment column |
-| `length` | int | `null` | Length for `string` type |
+| `length` | int | `255` for `string` | Length for `string` type |
 | `precision` | int | `null` | Precision for `decimal` |
 | `scale` | int | `null` | Scale for `decimal` |
 | `unsigned` | bool | `false` | Unsigned integer |

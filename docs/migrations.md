@@ -29,6 +29,7 @@ When you run `rowcast-schema diff`, a PHP class is generated:
 declare(strict_types=1);
 
 use AsceticSoft\RowcastSchema\Migration\AbstractMigration;
+use AsceticSoft\RowcastSchema\Schema\ColumnType;
 use AsceticSoft\RowcastSchema\SchemaBuilder\SchemaBuilder;
 use AsceticSoft\RowcastSchema\SchemaBuilder\TableBuilder;
 
@@ -37,9 +38,9 @@ final class Migration_20260306_143022_CreateUsersTable extends AbstractMigration
     public function up(SchemaBuilder $schema): void
     {
         $schema->createTable('users', function (TableBuilder $table) {
-            $table->integer('id')->primaryKey()->autoIncrement();
-            $table->string('email', 255);
-            $table->datetime('created_at')->default('CURRENT_TIMESTAMP');
+            $table->column('id', 'integer')->primaryKey()->autoIncrement();
+            $table->column('email', 'string'); // default length: 255
+            $table->column('created_at', ColumnType::Datetime)->default('CURRENT_TIMESTAMP');
         });
         $schema->addIndex('users', 'idx_users_email', ['email'], unique: true);
     }
@@ -109,30 +110,25 @@ The `AbstractMigration` base class is provided for convenience but carries no lo
 
 ## TableBuilder (Fluent API)
 
-Inside `createTable()`, you get a `TableBuilder` with shortcut methods:
+Inside `createTable()`, use the unified `column()` API:
 
 ```php
 $schema->createTable('products', function (TableBuilder $table) {
-    $table->uuid('id')->primaryKey();
-    $table->string('name', 255);
-    $table->decimal('price', 10, 2)->unsigned();
-    $table->text('description')->nullable();
-    $table->datetime('created_at')->default('CURRENT_TIMESTAMP');
-    $table->boolean('active')->default(true);
+    $table->column('id', 'uuid')->primaryKey();
+    $table->column('name', 'string'); // default length: 255
+    $table->column('price', 'decimal')->precision(10, 2)->unsigned();
+    $table->column('description', 'text')->nullable();
+    $table->column('created_at', ColumnType::Datetime)->default('CURRENT_TIMESTAMP');
+    $table->column('active', 'boolean')->default(true);
+    $table->column('meta', 'jsonb'); // custom raw DB type
 });
 ```
 
-### Column type shortcuts
+`column()` accepts:
 
-| Method | Type |
-|:-------|:-----|
-| `integer(name)` | `integer` |
-| `string(name, length)` | `string` |
-| `text(name)` | `text` |
-| `uuid(name)` | `uuid` |
-| `datetime(name)` | `datetime` |
-| `decimal(name, precision, scale)` | `decimal` |
-| `boolean(name)` | `boolean` |
+- `ColumnType` enum values (`ColumnType::String`, `ColumnType::Datetime`, ...),
+- known abstract type strings (`'string'`, `'integer'`, ...),
+- custom raw database types (`'jsonb'`, `'citext'`, `'numeric(20,6)'`, ...).
 
 ### Column modifiers
 

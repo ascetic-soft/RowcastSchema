@@ -75,7 +75,7 @@ YAML-поддержка опциональна. Установите `composer r
 | `integer` | INT / INTEGER |
 | `smallint` | SMALLINT |
 | `bigint` | BIGINT |
-| `string` | VARCHAR (требует `length`) |
+| `string` | VARCHAR (длина по умолчанию: `255`) |
 | `text` | TEXT |
 | `boolean` | BOOLEAN / TINYINT(1) |
 | `decimal` | DECIMAL (требует `precision`, `scale`) |
@@ -101,7 +101,7 @@ YAML-поддержка опциональна. Установите `composer r
 | `default` | mixed | `null` | Значение по умолчанию |
 | `primaryKey` | bool | `false` | Первичный ключ |
 | `autoIncrement` | bool | `false` | Автоинкремент |
-| `length` | int | `null` | Длина для `string` |
+| `length` | int | `255` для `string` | Длина для `string` |
 | `precision` | int | `null` | Точность для `decimal` |
 | `scale` | int | `null` | Масштаб для `decimal` |
 | `unsigned` | bool | `false` | Беззнаковое целое |
