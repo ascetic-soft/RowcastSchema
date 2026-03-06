@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AsceticSoft\RowcastSchema\Cli\Command;
 
 use AsceticSoft\RowcastSchema\Cli\Config;
+use AsceticSoft\RowcastSchema\Cli\TableIgnoreMatcher;
 use AsceticSoft\RowcastSchema\Diff\SchemaDiffer;
 use AsceticSoft\RowcastSchema\Introspector\IntrospectorFactory;
 use AsceticSoft\RowcastSchema\Migration\MigrationGenerator;
@@ -17,14 +18,15 @@ final readonly class DiffCommand implements CommandInterface
         private IntrospectorFactory $introspectorFactory,
         private SchemaDiffer $differ,
         private MigrationGenerator $generator,
+        private TableIgnoreMatcher $tableIgnoreMatcher,
     ) {
     }
 
     public function execute(array $args, Config $config): int
     {
-        $target = $this->parser->parse($config->schemaPath);
+        $target = $this->tableIgnoreMatcher->filterSchema($this->parser->parse($config->schemaPath));
         $introspector = $this->introspectorFactory->createForPdo($config->pdo);
-        $current = $introspector->introspect($config->pdo);
+        $current = $this->tableIgnoreMatcher->filterSchema($introspector->introspect($config->pdo));
         $operations = $this->differ->diff($current, $target);
 
         if (\in_array('--dry-run', $args, true)) {

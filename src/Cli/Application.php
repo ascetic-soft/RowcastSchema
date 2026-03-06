@@ -43,14 +43,15 @@ final class Application
             $introspectorFactory = new IntrospectorFactory();
             $platform = new PlatformFactory()->createForPdo($config->pdo);
             $loader = new MigrationLoader();
-            $repository = new DatabaseMigrationRepository($config->pdo);
+            $repository = new DatabaseMigrationRepository($config->pdo, $config->migrationTableName);
             $runner = new MigrationRunner($config->pdo, $loader, $repository, $platform);
+            $tableIgnoreMatcher = new TableIgnoreMatcher($config->ignoreTableRules, $config->migrationTableName);
 
             $commands = [
-                'diff' => new DiffCommand($parser, $introspectorFactory, $differ, new MigrationGenerator()),
+                'diff' => new DiffCommand($parser, $introspectorFactory, $differ, new MigrationGenerator(), $tableIgnoreMatcher),
                 'migrate' => new MigrateCommand($runner),
                 'rollback' => new RollbackCommand($runner),
-                'status' => new StatusCommand($parser, $introspectorFactory, $differ, $loader, $repository),
+                'status' => new StatusCommand($parser, $introspectorFactory, $differ, $loader, $repository, $tableIgnoreMatcher),
             ];
 
             $command = $commands[$commandName] ?? null;

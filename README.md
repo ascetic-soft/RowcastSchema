@@ -48,8 +48,18 @@ return [
     ],
     'schema' => __DIR__ . '/schema.php',
     'migrations' => __DIR__ . '/migrations',
+    'migration_table' => '_rowcast_migrations',
+    'ignore_tables' => [
+        '/^tmp_/',
+        '/^audit_/',
+        static fn (string $table): bool => str_ends_with($table, '_shadow'),
+    ],
 ];
 ```
+
+`migration_table` defines the table used to track applied migrations.
+This table is always ignored automatically in schema diff.
+Use `ignore_tables` to add custom ignore rules: regex strings and/or callbacks.
 
 ### 2. Define a schema
 

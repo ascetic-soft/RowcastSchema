@@ -42,8 +42,18 @@ return [
     ],
     'schema' => __DIR__ . '/schema.php',
     'migrations' => __DIR__ . '/migrations',
+    'migration_table' => '_rowcast_migrations',
+    'ignore_tables' => [
+        '/^tmp_/',
+        '/^audit_/',
+        static fn (string $table): bool => str_ends_with($table, '_shadow'),
+    ],
 ];
 ```
+
+`migration_table` задаёт таблицу учёта применённых миграций.
+Эта таблица всегда игнорируется автоматически при сравнении схемы.
+Используйте `ignore_tables` для своих правил игнора: regex-строки и/или callback.
 
 ### 2. Опишите схему
 

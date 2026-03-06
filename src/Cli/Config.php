@@ -6,10 +6,15 @@ namespace AsceticSoft\RowcastSchema\Cli;
 
 final readonly class Config
 {
+    /**
+     * @param list<string|\Closure(string):bool> $ignoreTableRules
+     */
     public function __construct(
         public string $schemaPath,
         public string $migrationsPath,
+        public string $migrationTableName,
         public \PDO $pdo,
+        public array $ignoreTableRules = [],
     ) {
     }
 
@@ -45,12 +50,48 @@ final readonly class Config
         $pdo = new \PDO($dsn, $username, $password, $options);
         $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
+        $migrationTableNameRaw = $config['migration_table'] ?? '_rowcast_migrations';
+        if (!\is_string($migrationTableNameRaw) || $migrationTableNameRaw === '') {
+            throw new \RuntimeException('Config "migration_table" must be a non-empty string.');
+        }
+
+        $ignoreConfig = $config['ignore_tables'] ?? [];
+        if (!\is_array($ignoreConfig)) {
+            throw new \RuntimeException('Config "ignore_tables" must be an array.');
+        }
+
+        $rules = [];
+        foreach ($ignoreConfig as $rule) {
+            if (\is_string($rule)) {
+                if ($rule === '') {
+                    throw new \RuntimeException('Ignore table regex rule must be a non-empty string.');
+                }
+                set_error_handler(static fn (): bool => true);
+                $isValidPattern = preg_match($rule, '') !== false;
+                restore_error_handler();
+                if (!$isValidPattern) {
+                    throw new \RuntimeException(\sprintf('Invalid ignore table regex pattern: %s', $rule));
+                }
+                $rules[] = $rule;
+                continue;
+            }
+
+            if (\is_callable($rule)) {
+                $rules[] = \Closure::fromCallable($rule);
+                continue;
+            }
+
+            throw new \RuntimeException('Each "ignore_tables" rule must be a regex string or callable.');
+        }
+
         return new self(
             schemaPath: isset($config['schema']) && \is_string($config['schema']) ? $config['schema'] : getcwd() . '/schema.php',
             migrationsPath: isset($config['migrations']) && \is_string($config['migrations'])
                 ? $config['migrations']
                 : getcwd() . '/migrations',
+            migrationTableName: $migrationTableNameRaw,
             pdo: $pdo,
+            ignoreTableRules: $rules,
         );
     }
 }

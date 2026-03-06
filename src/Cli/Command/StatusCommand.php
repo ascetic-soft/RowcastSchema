@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AsceticSoft\RowcastSchema\Cli\Command;
 
 use AsceticSoft\RowcastSchema\Cli\Config;
+use AsceticSoft\RowcastSchema\Cli\TableIgnoreMatcher;
 use AsceticSoft\RowcastSchema\Diff\SchemaDiffer;
 use AsceticSoft\RowcastSchema\Introspector\IntrospectorFactory;
 use AsceticSoft\RowcastSchema\Migration\MigrationLoader;
@@ -19,6 +20,7 @@ final readonly class StatusCommand implements CommandInterface
         private SchemaDiffer $differ,
         private MigrationLoader $loader,
         private MigrationRepositoryInterface $repository,
+        private TableIgnoreMatcher $tableIgnoreMatcher,
     ) {
     }
 
@@ -41,8 +43,10 @@ final readonly class StatusCommand implements CommandInterface
             }
         }
 
-        $target = $this->parser->parse($config->schemaPath);
-        $current = $this->introspectorFactory->createForPdo($config->pdo)->introspect($config->pdo);
+        $target = $this->tableIgnoreMatcher->filterSchema($this->parser->parse($config->schemaPath));
+        $current = $this->tableIgnoreMatcher->filterSchema(
+            $this->introspectorFactory->createForPdo($config->pdo)->introspect($config->pdo),
+        );
         $diff = $this->differ->diff($current, $target);
 
         if ($diff === []) {

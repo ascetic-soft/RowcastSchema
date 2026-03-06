@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AsceticSoft\RowcastSchema\Introspector;
 
 use AsceticSoft\RowcastSchema\Schema\Column;
+use AsceticSoft\RowcastSchema\Schema\ColumnType;
 use AsceticSoft\RowcastSchema\Schema\Schema;
 use AsceticSoft\RowcastSchema\Schema\Table;
 use AsceticSoft\RowcastSchema\TypeMapper\TypeMapperInterface;
@@ -60,13 +61,17 @@ final readonly class MysqlIntrospector implements IntrospectorInterface
                 $tables[$tableName]['pk'][] = $columnName;
             }
 
+            $abstractType = $this->typeMapper->toAbstractType($columnType);
+            $length = $abstractType === ColumnType::String ? $this->extractLength($columnType) : null;
+
             $tables[$tableName]['columns'][$columnName] = new Column(
                 name: $columnName,
-                type: $this->typeMapper->toAbstractType($columnType),
+                type: $abstractType,
                 nullable: $isNullable === 'YES',
                 default: $row['COLUMN_DEFAULT'],
                 primaryKey: $isPrimary,
                 autoIncrement: str_contains($extra, 'auto_increment'),
+                length: $length,
             );
         }
 
@@ -80,5 +85,14 @@ final readonly class MysqlIntrospector implements IntrospectorInterface
         }
 
         return new Schema($result);
+    }
+
+    private function extractLength(string $columnType): ?int
+    {
+        if (preg_match('/^(?:var)?char\((\d+)\)/i', $columnType, $matches) !== 1) {
+            return null;
+        }
+
+        return (int) $matches[1];
     }
 }
