@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AsceticSoft\RowcastSchema\Introspector;
 
 use AsceticSoft\RowcastSchema\Schema\Column;
+use AsceticSoft\RowcastSchema\Schema\ColumnType;
 use AsceticSoft\RowcastSchema\Schema\Schema;
 use AsceticSoft\RowcastSchema\Schema\Table;
 use AsceticSoft\RowcastSchema\TypeMapper\TypeMapperInterface;
@@ -19,6 +20,7 @@ final readonly class PostgresIntrospector implements IntrospectorInterface
     {
         $stmt = $pdo->query(
             "SELECT c.table_name, c.column_name, c.udt_name, c.is_nullable, c.column_default,
+                    c.character_maximum_length, c.numeric_precision, c.numeric_scale,
                     tc.constraint_type
              FROM information_schema.columns c
              LEFT JOIN information_schema.key_column_usage kcu
@@ -60,13 +62,21 @@ final readonly class PostgresIntrospector implements IntrospectorInterface
                 $tables[$tableName]['pk'][] = $columnName;
             }
 
+            $abstractType = $this->typeMapper->toAbstractType($udtName);
+            $length = $abstractType === ColumnType::String ? $this->toNullableInt($row['character_maximum_length'] ?? null) : null;
+            $precision = $abstractType === ColumnType::Decimal ? $this->toNullableInt($row['numeric_precision'] ?? null) : null;
+            $scale = $abstractType === ColumnType::Decimal ? $this->toNullableInt($row['numeric_scale'] ?? null) : null;
+
             $tables[$tableName]['columns'][$columnName] = new Column(
                 name: $columnName,
-                type: $this->typeMapper->toAbstractType($udtName),
+                type: $abstractType,
                 nullable: $isNullable === 'YES',
                 default: $columnDefault,
                 primaryKey: $isPrimary,
                 autoIncrement: \is_string($columnDefault) && str_contains($columnDefault, 'nextval'),
+                length: $length,
+                precision: $precision,
+                scale: $scale,
             );
         }
 
@@ -80,5 +90,22 @@ final readonly class PostgresIntrospector implements IntrospectorInterface
         }
 
         return new Schema($result);
+    }
+
+    private function toNullableInt(mixed $value): ?int
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (\is_int($value)) {
+            return $value;
+        }
+
+        if (\is_string($value) && is_numeric($value)) {
+            return (int) $value;
+        }
+
+        return null;
     }
 }

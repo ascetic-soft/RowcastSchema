@@ -136,7 +136,7 @@ final class ArraySchemaBuilder
             throw new \InvalidArgumentException(\sprintf('Column "%s" must define string "type".', $columnName));
         }
 
-        $type = ColumnType::tryFrom($typeRaw);
+        $type = ColumnType::tryFrom($this->normalizeColumnType($typeRaw));
         if ($type === null) {
             throw new \InvalidArgumentException(\sprintf('Unknown column type "%s" for column "%s".', $typeRaw, $columnName));
         }
@@ -196,6 +196,16 @@ final class ArraySchemaBuilder
         }
 
         return $value;
+    }
+
+    private function normalizeColumnType(string $typeRaw): string
+    {
+        $normalized = \strtolower(\trim($typeRaw));
+
+        return match ($normalized) {
+            'jsonb' => ColumnType::Json->value,
+            default => $normalized,
+        };
     }
 
     private function toInt(mixed $value, string $message): int

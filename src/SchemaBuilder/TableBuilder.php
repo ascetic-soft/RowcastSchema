@@ -109,12 +109,20 @@ final class TableBuilder
         }
 
         $normalized = \trim($type);
-        $resolved = ColumnType::tryFrom(\strtolower($normalized));
+        $resolved = ColumnType::tryFrom($this->normalizeKnownTypeAlias(\strtolower($normalized)));
         if ($resolved instanceof ColumnType) {
             return [$resolved, null];
         }
 
         return [ColumnType::Text, $normalized];
+    }
+
+    private function normalizeKnownTypeAlias(string $normalizedType): string
+    {
+        return match ($normalizedType) {
+            'jsonb' => ColumnType::Json->value,
+            default => $normalizedType,
+        };
     }
 
 }
