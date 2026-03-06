@@ -52,7 +52,9 @@ final class MigrationRunnerSqliteTest extends TestCase
         $applied = $runner->migrate($dir);
         self::assertSame(1, $applied);
 
-        $count = (int)$pdo->query("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='users'")->fetchColumn();
+        $stmt = $pdo->query("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='users'");
+        self::assertNotFalse($stmt);
+        $count = (int) $stmt->fetchColumn();
         self::assertSame(1, $count);
 
         @unlink($migrationFile);

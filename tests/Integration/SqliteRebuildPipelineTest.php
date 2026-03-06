@@ -55,10 +55,14 @@ final class SqliteRebuildPipelineTest extends TestCase
 
         $runner->migrate($dir);
 
-        $value = $pdo->query('SELECT name FROM users WHERE id = 1')->fetchColumn();
+        $stmt = $pdo->query('SELECT name FROM users WHERE id = 1');
+        self::assertNotFalse($stmt);
+        $value = $stmt->fetchColumn();
         self::assertSame('Alice', $value);
 
-        $info = $pdo->query("PRAGMA table_info('users')")->fetchAll(\PDO::FETCH_ASSOC);
+        $infoStmt = $pdo->query("PRAGMA table_info('users')");
+        self::assertNotFalse($infoStmt);
+        $info = $infoStmt->fetchAll(\PDO::FETCH_ASSOC);
         $nameColumn = array_values(array_filter($info, static fn (array $col): bool => $col['name'] === 'name'))[0] ?? null;
         self::assertIsArray($nameColumn);
         self::assertSame("'guest'", $nameColumn['dflt_value']);
@@ -104,7 +108,9 @@ final class SqliteRebuildPipelineTest extends TestCase
 
         $runner->migrate($dir);
 
-        $fkRowsAfterAdd = $pdo->query("PRAGMA foreign_key_list('users')")->fetchAll(\PDO::FETCH_ASSOC);
+        $fkStmt = $pdo->query("PRAGMA foreign_key_list('users')");
+        self::assertNotFalse($fkStmt);
+        $fkRowsAfterAdd = $fkStmt->fetchAll(\PDO::FETCH_ASSOC);
         self::assertCount(1, $fkRowsAfterAdd);
 
         $dropFile = $dir . '/Migration_20260103_000002.php';
@@ -126,7 +132,9 @@ final class SqliteRebuildPipelineTest extends TestCase
 
         $runner->migrate($dir);
 
-        $fkRows = $pdo->query("PRAGMA foreign_key_list('users')")->fetchAll(\PDO::FETCH_ASSOC);
+        $fkStmt2 = $pdo->query("PRAGMA foreign_key_list('users')");
+        self::assertNotFalse($fkStmt2);
+        $fkRows = $fkStmt2->fetchAll(\PDO::FETCH_ASSOC);
         self::assertCount(0, $fkRows);
 
         @unlink($addFile);
