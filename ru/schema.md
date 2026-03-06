@@ -1,0 +1,168 @@
+---
+title: Описание схемы
+layout: default
+nav_order: 3
+parent: Русский
+---
+
+# Описание схемы
+{: .no_toc }
+
+Определите структуру БД в PHP или YAML.
+{: .fs-6 .fw-300 }
+
+<details open markdown="block">
+  <summary>Содержание</summary>
+  {: .text-delta }
+- TOC
+{:toc}
+</details>
+
+---
+
+## Форматы схемы
+
+Rowcast Schema поддерживает два формата. Парсер выбирается автоматически по расширению файла.
+
+### PHP-формат (по умолчанию, без зависимостей)
+
+```php
+<?php
+
+return [
+    'tables' => [
+        'users' => [
+            'columns' => [
+                'id' => ['type' => 'integer', 'primaryKey' => true, 'autoIncrement' => true],
+                'email' => ['type' => 'string', 'length' => 255],
+            ],
+            'indexes' => [
+                'idx_users_email' => ['columns' => ['email'], 'unique' => true],
+            ],
+        ],
+    ],
+];
+```
+
+### YAML-формат (требует `symfony/yaml`)
+
+```yaml
+tables:
+  users:
+    columns:
+      id:
+        type: integer
+        primaryKey: true
+        autoIncrement: true
+      email:
+        type: string
+        length: 255
+    indexes:
+      idx_users_email:
+        columns: [email]
+        unique: true
+```
+
+{: .note }
+YAML-поддержка опциональна. Установите `composer require symfony/yaml`. Если пакет отсутствует и указан `.yaml`-файл, парсер выбросит понятную ошибку с инструкцией по установке.
+
+---
+
+## Поддерживаемые абстрактные типы
+
+| Тип | Описание |
+|:----|:---------|
+| `integer` | INT / INTEGER |
+| `smallint` | SMALLINT |
+| `bigint` | BIGINT |
+| `string` | VARCHAR (требует `length`) |
+| `text` | TEXT |
+| `boolean` | BOOLEAN / TINYINT(1) |
+| `decimal` | DECIMAL (требует `precision`, `scale`) |
+| `float` | FLOAT |
+| `double` | DOUBLE |
+| `datetime` | DATETIME |
+| `date` | DATE |
+| `time` | TIME |
+| `timestamp` | TIMESTAMP |
+| `uuid` | CHAR(36) / UUID |
+| `json` | JSON / TEXT |
+| `binary` | BLOB / BYTEA |
+| `enum` | ENUM (требует `values`) |
+
+---
+
+## Параметры колонки
+
+| Параметр | Тип | По умолч. | Описание |
+|:---------|:----|:----------|:---------|
+| `type` | string | *обязат.* | Абстрактный тип |
+| `nullable` | bool | `false` | Разрешить NULL |
+| `default` | mixed | `null` | Значение по умолчанию |
+| `primaryKey` | bool | `false` | Первичный ключ |
+| `autoIncrement` | bool | `false` | Автоинкремент |
+| `length` | int | `null` | Длина для `string` |
+| `precision` | int | `null` | Точность для `decimal` |
+| `scale` | int | `null` | Масштаб для `decimal` |
+| `unsigned` | bool | `false` | Беззнаковое целое |
+| `comment` | string | `null` | Комментарий |
+| `values` | list | `[]` | Значения для `enum` |
+
+---
+
+## Параметры таблицы
+
+| Параметр | Тип | Описание |
+|:---------|:----|:---------|
+| `columns` | map | Определения колонок (обязательно) |
+| `primaryKey` | list | Составной первичный ключ |
+| `indexes` | map | Именованные индексы |
+| `foreignKeys` | map | Внешние ключи |
+| `engine` | string | MySQL engine (напр. `InnoDB`) |
+| `charset` | string | MySQL charset |
+| `collation` | string | MySQL collation |
+
+---
+
+## Индексы
+
+```php
+'indexes' => [
+    'idx_users_email' => [
+        'columns' => ['email'],
+        'unique' => true,
+    ],
+],
+```
+
+---
+
+## Внешние ключи
+
+```php
+'foreignKeys' => [
+    'fk_orders_user' => [
+        'columns' => ['user_id'],
+        'references' => [
+            'table' => 'users',
+            'columns' => ['id'],
+        ],
+        'onDelete' => 'cascade',
+    ],
+],
+```
+
+---
+
+## Составной первичный ключ
+
+```php
+'order_items' => [
+    'columns' => [
+        'order_id' => ['type' => 'integer'],
+        'position' => ['type' => 'integer'],
+        'product_id' => ['type' => 'integer'],
+    ],
+    'primaryKey' => ['order_id', 'position'],
+],
+```
