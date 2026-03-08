@@ -81,7 +81,7 @@ final readonly class Config
             }
 
             if (\is_callable($rule)) {
-                $rules[] = \Closure::fromCallable($rule);
+                $rules[] = $rule(...);
                 continue;
             }
 

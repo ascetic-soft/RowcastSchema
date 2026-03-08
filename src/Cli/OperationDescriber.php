@@ -22,64 +22,64 @@ final class OperationDescriber
     public function describe(OperationInterface $operation): string
     {
         return match (true) {
-            $operation instanceof CreateTable => sprintf(
+            $operation instanceof CreateTable => \sprintf(
                 '+ Create table "%s" (%d columns, %d indexes, %d FKs)',
                 $operation->table->name,
-                count($operation->table->columns),
-                count($operation->table->indexes),
-                count($operation->table->foreignKeys),
+                \count($operation->table->columns),
+                \count($operation->table->indexes),
+                \count($operation->table->foreignKeys),
             ),
-            $operation instanceof DropTable => sprintf(
+            $operation instanceof DropTable => \sprintf(
                 '- Drop table "%s"',
                 $operation->tableName,
             ),
-            $operation instanceof AddColumn => sprintf(
+            $operation instanceof AddColumn => \sprintf(
                 '+ Add column "%s"."%s" (%s)',
                 $operation->tableName,
                 $operation->column->name,
                 $this->columnTypeLabel($operation->column),
             ),
-            $operation instanceof DropColumn => sprintf(
+            $operation instanceof DropColumn => \sprintf(
                 '- Drop column "%s"."%s"',
                 $operation->tableName,
                 $operation->columnName,
             ),
-            $operation instanceof AlterColumn => sprintf(
+            $operation instanceof AlterColumn => \sprintf(
                 '~ Alter column "%s"."%s" (%s -> %s)',
                 $operation->tableName,
                 $operation->columnName,
                 $operation->oldColumn !== null ? $this->columnTypeLabel($operation->oldColumn) : 'unknown',
                 $this->columnTypeLabel($operation->newColumn),
             ),
-            $operation instanceof AddIndex => sprintf(
+            $operation instanceof AddIndex => \sprintf(
                 '+ Add index "%s"."%s" (%s)%s',
                 $operation->tableName,
                 $operation->index->name,
                 implode(', ', $operation->index->columns),
                 $operation->index->unique ? ' unique' : '',
             ),
-            $operation instanceof DropIndex => sprintf(
+            $operation instanceof DropIndex => \sprintf(
                 '- Drop index "%s"."%s"',
                 $operation->tableName,
                 $operation->indexName,
             ),
-            $operation instanceof AddForeignKey => sprintf(
+            $operation instanceof AddForeignKey => \sprintf(
                 '+ Add FK "%s"."%s" -> %s(%s)',
                 $operation->tableName,
                 $operation->foreignKey->name,
                 $operation->foreignKey->referenceTable,
                 implode(', ', $operation->foreignKey->referenceColumns),
             ),
-            $operation instanceof DropForeignKey => sprintf(
+            $operation instanceof DropForeignKey => \sprintf(
                 '- Drop FK "%s"."%s"',
                 $operation->tableName,
                 $operation->foreignKeyName,
             ),
-            $operation instanceof RawSql => sprintf(
+            $operation instanceof RawSql => \sprintf(
                 '~ Execute raw SQL (%s)',
                 $this->truncateSql($operation->sql),
             ),
-            default => sprintf('~ %s', $operation::class),
+            default => \sprintf('~ %s', $operation::class),
         };
     }
 
@@ -133,7 +133,7 @@ final class OperationDescriber
                 continue;
             }
 
-            $parts[] = sprintf('%d %s', $group['count'], $group['label']);
+            $parts[] = \sprintf('%d %s', $group['count'], $group['label']);
         }
 
         return implode(', ', $parts);
@@ -173,7 +173,7 @@ final class OperationDescriber
 
         $attributeLabel = $attributes !== [] ? ' [' . implode(', ', $attributes) . ']' : '';
 
-        return sprintf(
+        return \sprintf(
             '%s %s%s',
             $column->name,
             $this->columnTypeLabel($column),
@@ -183,7 +183,7 @@ final class OperationDescriber
 
     private function formatForeignKeyDetail(AddForeignKey $operation): string
     {
-        $detail = sprintf(
+        $detail = \sprintf(
             'columns: (%s), references: %s(%s)',
             implode(', ', $operation->foreignKey->columns),
             $operation->foreignKey->referenceTable,
@@ -202,7 +202,7 @@ final class OperationDescriber
 
     private function formatIndexDetail(AddIndex $operation): string
     {
-        return sprintf(
+        return \sprintf(
             'columns: (%s)%s',
             implode(', ', $operation->index->columns),
             $operation->index->unique ? ', unique' : '',
@@ -217,11 +217,11 @@ final class OperationDescriber
 
         $type = $column->type->value;
         if ($column->length !== null) {
-            return sprintf('%s(%d)', $type, $column->length);
+            return \sprintf('%s(%d)', $type, $column->length);
         }
 
         if ($column->precision !== null && $column->scale !== null) {
-            return sprintf('%s(%d,%d)', $type, $column->precision, $column->scale);
+            return \sprintf('%s(%d,%d)', $type, $column->precision, $column->scale);
         }
 
         return $type;
@@ -230,7 +230,7 @@ final class OperationDescriber
     private function truncateSql(string $sql): string
     {
         $normalized = trim(preg_replace('/\s+/', ' ', $sql) ?? $sql);
-        if (strlen($normalized) <= 80) {
+        if (\strlen($normalized) <= 80) {
             return $normalized;
         }
 

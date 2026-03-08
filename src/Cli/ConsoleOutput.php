@@ -60,7 +60,7 @@ final readonly class ConsoleOutput
             return $message;
         }
 
-        return "\033[{$code}m{$message}\033[0m";
+        return "\033[{$code}m$message\033[0m";
     }
 
     /**

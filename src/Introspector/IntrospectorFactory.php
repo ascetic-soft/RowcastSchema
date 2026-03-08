@@ -34,7 +34,7 @@ final class IntrospectorFactory
     {
         $driver = $this->driverResolver->resolve($pdo);
         if (!isset($this->registry[$driver])) {
-            throw new \RuntimeException(sprintf('Unsupported PDO driver "%s".', $driver));
+            throw new \RuntimeException(\sprintf('Unsupported PDO driver "%s".', $driver));
         }
 
         return ($this->registry[$driver])();

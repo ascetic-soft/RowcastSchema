@@ -16,6 +16,7 @@ use AsceticSoft\RowcastSchema\Migration\DatabaseMigrationRepository;
 use AsceticSoft\RowcastSchema\Migration\MigrationGenerator;
 use AsceticSoft\RowcastSchema\Migration\MigrationLoader;
 use AsceticSoft\RowcastSchema\Migration\MigrationRunner;
+use AsceticSoft\RowcastSchema\Parser\AttributeSchemaParser;
 use AsceticSoft\RowcastSchema\Parser\PhpSchemaParser;
 use AsceticSoft\RowcastSchema\Parser\SchemaParserInterface;
 use AsceticSoft\RowcastSchema\Parser\YamlSchemaParser;
@@ -112,10 +113,9 @@ final class Application
         $configPath = null;
         $noAnsi = false;
         $filtered = [];
-        $count = \count($argv);
 
-        for ($index = 0; $index < $count; $index++) {
-            $arg = $argv[$index];
+        foreach ($argv as $index => $indexValue) {
+            $arg = $indexValue;
 
             if (\str_starts_with($arg, '--config=')) {
                 $value = \trim(\substr($arg, 9));
@@ -132,7 +132,6 @@ final class Application
                     throw new \RuntimeException('Option "--config" requires a non-empty path.');
                 }
                 $configPath = $value;
-                $index++;
                 continue;
             }
 
@@ -157,6 +156,10 @@ final class Application
 
     private function createParser(string $schemaPath): SchemaParserInterface
     {
+        if (is_dir($schemaPath)) {
+            return new AttributeSchemaParser();
+        }
+
         $extension = strtolower(pathinfo($schemaPath, PATHINFO_EXTENSION));
 
         return match ($extension) {

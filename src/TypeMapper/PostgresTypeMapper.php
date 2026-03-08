@@ -11,29 +11,24 @@ final class PostgresTypeMapper implements TypeMapperInterface
 {
     public function toSqlType(Column $column): string
     {
-        if ($column->databaseType !== null) {
-            return $column->databaseType;
-        }
-
-        return match ($column->type) {
+        return $column->databaseType ?? match ($column->type) {
             ColumnType::Integer => $column->autoIncrement ? 'SERIAL' : 'INTEGER',
             ColumnType::Smallint => $column->autoIncrement ? 'SMALLSERIAL' : 'SMALLINT',
             ColumnType::Bigint => $column->autoIncrement ? 'BIGSERIAL' : 'BIGINT',
             ColumnType::String => \sprintf('VARCHAR(%d)', $column->length ?? 255),
-            ColumnType::Text => 'TEXT',
+            ColumnType::Text, ColumnType::Enum => 'TEXT',
             ColumnType::Boolean => 'BOOLEAN',
             ColumnType::Decimal => \sprintf('NUMERIC(%d,%d)', $column->precision, $column->scale),
             ColumnType::Float => 'REAL',
             ColumnType::Double => 'DOUBLE PRECISION',
-            ColumnType::Datetime => 'TIMESTAMP(0) WITHOUT TIME ZONE',
+            ColumnType::Datetime,
+            ColumnType::Timestamp => 'TIMESTAMP(0) WITHOUT TIME ZONE',
             ColumnType::Date => 'DATE',
             ColumnType::Time => 'TIME(0) WITHOUT TIME ZONE',
-            ColumnType::Timestamp => 'TIMESTAMP(0) WITHOUT TIME ZONE',
             ColumnType::Timestamptz => 'TIMESTAMP(0) WITH TIME ZONE',
             ColumnType::Uuid => 'UUID',
             ColumnType::Json => 'JSONB',
             ColumnType::Binary => 'BYTEA',
-            ColumnType::Enum => 'TEXT',
         };
     }
 

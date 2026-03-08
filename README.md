@@ -122,8 +122,81 @@ Global CLI option:
 |--------|------|------------|
 | PHP array (default) | `schema.php` | None |
 | YAML | `schema.yaml` / `schema.yml` | `symfony/yaml` |
+| PHP attributes | directory (e.g. `src/Entity`) | None |
 
-The format is detected automatically by file extension.
+The format is detected automatically by schema path:
+
+- if `schema` is a directory, attribute parser is used
+- if `schema` is a file, parser is selected by extension (`.php`, `.yaml`, `.yml`)
+
+### Attribute-based schema
+
+You can define schema directly in PHP classes via attributes.
+
+`rowcast-schema.php`:
+
+```php
+<?php
+
+return [
+    'connection' => [
+        'dsn' => 'mysql:host=localhost;dbname=app',
+        'username' => 'root',
+        'password' => 'secret',
+    ],
+    'schema' => __DIR__ . '/src/Entity',
+    'migrations' => __DIR__ . '/migrations',
+];
+```
+
+Entity example:
+
+```php
+<?php
+
+use AsceticSoft\RowcastSchema\Attribute\Column;
+use AsceticSoft\RowcastSchema\Attribute\ForeignKey;
+use AsceticSoft\RowcastSchema\Attribute\Index;
+use AsceticSoft\RowcastSchema\Attribute\Table;
+
+enum UserStatus: string
+{
+    case Active = 'active';
+    case Banned = 'banned';
+}
+
+#[Table] // User -> users
+#[Index('idx_users_email', columns: ['email'], unique: true)]
+final class User
+{
+    #[Column(primaryKey: true, autoIncrement: true)]
+    public int $id;
+
+    #[Column(length: 255)]
+    public string $email;
+
+    #[Column]
+    public UserStatus $status; // BackedEnum(string) -> type=enum, values from enum cases
+}
+
+#[Table('blog_posts')]
+final class Post
+{
+    #[Column(primaryKey: true, autoIncrement: true)]
+    public int $id;
+
+    #[Column]
+    #[ForeignKey('fk_posts_user', referenceTable: 'users', referenceColumns: ['id'], onDelete: 'CASCADE')]
+    public int $userId;
+}
+```
+
+Type inference for attribute columns:
+
+- property type mapping: `int`, `string`, `bool`, `float`, `array`, `DateTimeInterface`
+- `BackedEnum` (`string`) -> `enum` + automatic `values`
+- `BackedEnum` (`int`) -> `integer`
+- override is still possible via `#[Column(type: ...)]`
 
 ### Abstract column types
 
@@ -225,7 +298,7 @@ vendor/bin/rowcast-schema <command> [options]
 
 ## How It Works
 
-1. **Parse** — reads `schema.php` (or `.yaml`) and builds an internal `Schema` model.
+1. **Parse** — reads schema file (`.php` / `.yaml`) or scans attribute directory and builds an internal `Schema` model.
 2. **Introspect** — reads the current database structure via PDO.
 3. **Diff** — `SchemaDiffer` computes a list of operations (create, drop, add, alter, etc.).
 4. **Generate** — creates a PHP migration class with `up()` and `down()` methods.
@@ -247,6 +320,9 @@ This enables complex schema changes on SQLite transparently.
 
 ```
 AsceticSoft\RowcastSchema\
+├── Attribute\
+│   ├── Table, Column             # Entity/table and property/column metadata
+│   └── Index, ForeignKey         # Index and FK metadata
 ├── Schema\
 │   ├── Schema                        # Root schema model
 │   ├── Table, Column, Index, ForeignKey  # Schema components
@@ -255,7 +331,11 @@ AsceticSoft\RowcastSchema\
 │   ├── SchemaParserInterface         # Parser contract
 │   ├── PhpSchemaParser               # PHP array parser (default)
 │   ├── YamlSchemaParser              # YAML parser (optional)
-│   └── ArraySchemaBuilder            # Shared array → Schema builder
+│   ├── AttributeSchemaParser         # Attribute directory parser
+│   ├── ArraySchemaBuilder            # Shared array → Schema builder
+│   ├── AttributeSchemaBuilder        # Reflection attributes → Schema builder
+│   ├── ClassScanner                  # Directory PHP class scanner
+│   └── NamingStrategy                # class/property -> table/column naming
 ├── Introspector\
 │   ├── IntrospectorInterface         # Introspector contract
 │   ├── IntrospectorFactory           # PDO driver → introspector

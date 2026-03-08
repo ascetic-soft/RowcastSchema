@@ -11,11 +11,7 @@ final class MysqlTypeMapper implements TypeMapperInterface
 {
     public function toSqlType(Column $column): string
     {
-        if ($column->databaseType !== null) {
-            return $column->databaseType;
-        }
-
-        return match ($column->type) {
+        return $column->databaseType ?? match ($column->type) {
             ColumnType::Integer => 'INT',
             ColumnType::Smallint => 'SMALLINT',
             ColumnType::Bigint => 'BIGINT',
@@ -28,14 +24,17 @@ final class MysqlTypeMapper implements TypeMapperInterface
             ColumnType::Datetime => 'DATETIME',
             ColumnType::Date => 'DATE',
             ColumnType::Time => 'TIME',
-            ColumnType::Timestamp => 'TIMESTAMP',
+            ColumnType::Timestamp,
             ColumnType::Timestamptz => 'TIMESTAMP',
             ColumnType::Uuid => 'CHAR(36)',
             ColumnType::Json => 'JSON',
             ColumnType::Binary => 'BLOB',
             ColumnType::Enum => \sprintf(
                 'ENUM(%s)',
-                implode(', ', array_map(static fn (string $v): string => "'" . str_replace("'", "\\'", $v) . "'", $column->enumValues)),
+                implode(', ', array_map(
+                    static fn (string $v): string => "'" . str_replace("'", "\\'", $v) . "'",
+                    $column->enumValues
+                )),
             ),
         };
     }

@@ -298,7 +298,7 @@ final readonly class PostgresIntrospector implements IntrospectorInterface
         };
     }
 
-    private function normalizeBooleanDefault(string $default): mixed
+    private function normalizeBooleanDefault(string $default): string|bool
     {
         $normalized = strtolower(trim($default, "'"));
 
