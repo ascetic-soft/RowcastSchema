@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 
 final class SqliteTypeMapperTest extends TestCase
 {
-    public function testMapsAbstractToSqlType(): void
+    public function testMapsStringToTextSqlType(): void
     {
         $mapper = new SqliteTypeMapper();
         $column = new Column('email', ColumnType::String, length: 255);
@@ -19,18 +19,34 @@ final class SqliteTypeMapperTest extends TestCase
         self::assertSame('TEXT', $mapper->toSqlType($column));
     }
 
-    public function testMapsTimestamptzToSqlType(): void
+    public function testMapsRepresentativeAbstractTypesToSqliteTypes(): void
     {
         $mapper = new SqliteTypeMapper();
-        $column = new Column('created_at', ColumnType::Timestamptz);
 
-        self::assertSame('TEXT', $mapper->toSqlType($column));
+        self::assertSame('INTEGER', $mapper->toSqlType(new Column('id', ColumnType::Integer)));
+        self::assertSame('INTEGER', $mapper->toSqlType(new Column('is_active', ColumnType::Boolean)));
+        self::assertSame('TEXT', $mapper->toSqlType(new Column('created_at', ColumnType::Timestamptz)));
+        self::assertSame('REAL', $mapper->toSqlType(new Column('price', ColumnType::Decimal, precision: 10, scale: 2)));
+        self::assertSame('BLOB', $mapper->toSqlType(new Column('blob_data', ColumnType::Binary)));
+    }
+
+    public function testReturnsCustomDatabaseTypeAsIs(): void
+    {
+        $mapper = new SqliteTypeMapper();
+        $column = new Column('payload', ColumnType::Json, databaseType: 'JSON');
+
+        self::assertSame('JSON', $mapper->toSqlType($column));
     }
 
     public function testMapsSqlTypeToAbstract(): void
     {
         $mapper = new SqliteTypeMapper();
+
         self::assertSame(ColumnType::Integer, $mapper->toAbstractType('INTEGER'));
+        self::assertSame(ColumnType::Text, $mapper->toAbstractType('VARCHAR(255)'));
+        self::assertSame(ColumnType::Text, $mapper->toAbstractType('CLOB'));
+        self::assertSame(ColumnType::Double, $mapper->toAbstractType('DOUBLE'));
         self::assertSame(ColumnType::Binary, $mapper->toAbstractType('BLOB'));
+        self::assertSame(ColumnType::Text, $mapper->toAbstractType('JSON'));
     }
 }
