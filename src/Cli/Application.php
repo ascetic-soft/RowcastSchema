@@ -6,6 +6,7 @@ namespace AsceticSoft\RowcastSchema\Cli;
 
 use AsceticSoft\RowcastSchema\Cli\Command\CommandInterface;
 use AsceticSoft\RowcastSchema\Cli\Command\DiffCommand;
+use AsceticSoft\RowcastSchema\Cli\Command\MakeCommand;
 use AsceticSoft\RowcastSchema\Cli\Command\MigrateCommand;
 use AsceticSoft\RowcastSchema\Cli\Command\RollbackCommand;
 use AsceticSoft\RowcastSchema\Cli\Command\StatusCommand;
@@ -51,6 +52,7 @@ final class Application
 
             $commands = [
                 'diff' => new DiffCommand($parser, $introspectorFactory, $differ, new MigrationGenerator(), $tableIgnoreMatcher),
+                'make' => new MakeCommand(new MigrationGenerator()),
                 'migrate' => new MigrateCommand($runner),
                 'rollback' => new RollbackCommand($runner),
                 'status' => new StatusCommand($parser, $introspectorFactory, $differ, $loader, $repository, $tableIgnoreMatcher),
@@ -76,6 +78,7 @@ final class Application
 
             Usage:
               rowcast-schema [--config=path] diff [--dry-run]
+              rowcast-schema [--config=path] make
               rowcast-schema [--config=path] migrate
               rowcast-schema [--config=path] rollback [--step=N]
               rowcast-schema [--config=path] status

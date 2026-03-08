@@ -134,6 +134,55 @@ final class MigrationRunnerTest extends TestCase
         @rmdir($dir);
     }
 
+    public function testMigrationExecutesRawSqlOperations(): void
+    {
+        $pdo = new \PDO('sqlite::memory:');
+        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+
+        $dir = sys_get_temp_dir() . '/rowcast_runner_raw_sql_' . uniqid('', true);
+        mkdir($dir, 0o777, true);
+
+        $class = 'Migration_' . str_replace('.', '', uniqid('20260102_000003_', true));
+        $file = $this->writeMigrationFile(
+            $dir,
+            $class,
+            '$schema->sql("CREATE TABLE raw_sql_demo (id INTEGER PRIMARY KEY, value TEXT NOT NULL)"); $schema->sql("INSERT INTO raw_sql_demo(value) VALUES (\'ok\')");',
+        );
+
+        $repo = new class () implements MigrationRepositoryInterface {
+            /** @var list<string> */
+            private array $applied = [];
+
+            public function ensureTable(): void
+            {
+            }
+            public function getApplied(): array
+            {
+                return $this->applied;
+            }
+            public function markApplied(string $version): void
+            {
+                $this->applied[] = $version;
+            }
+            public function markRolledBack(string $version): void
+            {
+                $this->applied = array_values(array_filter(
+                    $this->applied,
+                    static fn (string $item): bool => $item !== $version,
+                ));
+            }
+        };
+
+        $runner = new MigrationRunner($pdo, new MigrationLoader(), $repo, $this->sqlitePlatform());
+        $count = $runner->migrate($dir);
+
+        self::assertSame(1, $count);
+        self::assertSame(1, (int) $pdo->query("SELECT COUNT(*) FROM raw_sql_demo WHERE value = 'ok'")->fetchColumn());
+
+        @unlink($file);
+        @rmdir($dir);
+    }
+
     public function testThrowsWhenMigrationClassMissing(): void
     {
         $pdo = new \PDO('sqlite::memory:');

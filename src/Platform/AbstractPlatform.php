@@ -14,6 +14,7 @@ use AsceticSoft\RowcastSchema\Diff\Operation\DropForeignKey;
 use AsceticSoft\RowcastSchema\Diff\Operation\DropIndex;
 use AsceticSoft\RowcastSchema\Diff\Operation\DropTable;
 use AsceticSoft\RowcastSchema\Diff\Operation\OperationInterface;
+use AsceticSoft\RowcastSchema\Diff\Operation\RawSql;
 use AsceticSoft\RowcastSchema\Schema\Column;
 use AsceticSoft\RowcastSchema\Schema\ForeignKey;
 use AsceticSoft\RowcastSchema\Schema\Index;
@@ -46,6 +47,7 @@ abstract readonly class AbstractPlatform implements PlatformInterface
             $operation instanceof DropIndex => [$this->compileDropIndex($operation->tableName, $operation->indexName)],
             $operation instanceof AddForeignKey => [$this->compileAddForeignKey($operation->tableName, $operation->foreignKey)],
             $operation instanceof DropForeignKey => [$this->compileDropForeignKey($operation->tableName, $operation->foreignKeyName)],
+            $operation instanceof RawSql => [$operation->sql],
             default => throw new \LogicException('Unsupported migration operation.'),
         };
     }

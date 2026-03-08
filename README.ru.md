@@ -94,6 +94,9 @@ return [
 # Сгенерировать миграцию из диффа схемы
 vendor/bin/rowcast-schema diff
 
+# Сгенерировать пустой файл миграции
+vendor/bin/rowcast-schema make
+
 # Применить pending-миграции
 vendor/bin/rowcast-schema migrate
 
@@ -148,6 +151,15 @@ $table->column('status', ColumnType::String)->length(50);
 $table->column('payload', 'jsonb'); // кастомный raw-тип БД
 ```
 
+Чтобы выполнить произвольный SQL внутри миграции:
+
+```php
+public function up(SchemaBuilder $schema): void
+{
+    $schema->sql("UPDATE users SET status = 'active' WHERE status IS NULL");
+}
+```
+
 `column()` принимает:
 
 - enum `ColumnType` (`ColumnType::String`, `ColumnType::Datetime`, ...)
@@ -178,6 +190,7 @@ vendor/bin/rowcast-schema <команда> [опции]
 |---------|----------|
 | `diff` | Сгенерировать миграцию из изменений схемы |
 | `diff --dry-run` | Показать операции без генерации файла |
+| `make` | Сгенерировать пустой файл миграции |
 | `migrate` | Применить все pending-миграции |
 | `rollback` | Откатить последнюю миграцию |
 | `rollback --step=N` | Откатить последние N миграций |
@@ -263,6 +276,7 @@ AsceticSoft\RowcastSchema\
     └── Command\
         ├── CommandInterface          # Контракт команды
         ├── DiffCommand               # Команда diff
+        ├── MakeCommand               # Команда make
         ├── MigrateCommand            # Команда migrate
         ├── RollbackCommand           # Команда rollback
         └── StatusCommand             # Команда status

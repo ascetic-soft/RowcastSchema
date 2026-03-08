@@ -14,6 +14,7 @@ use AsceticSoft\RowcastSchema\Diff\Operation\DropForeignKey;
 use AsceticSoft\RowcastSchema\Diff\Operation\DropIndex;
 use AsceticSoft\RowcastSchema\Diff\Operation\DropTable;
 use AsceticSoft\RowcastSchema\Diff\Operation\OperationInterface;
+use AsceticSoft\RowcastSchema\Diff\Operation\RawSql;
 use AsceticSoft\RowcastSchema\Schema\Column;
 use AsceticSoft\RowcastSchema\Schema\ForeignKey;
 use AsceticSoft\RowcastSchema\Schema\Index;
@@ -93,6 +94,12 @@ final class SchemaBuilder
     public function dropForeignKey(string $table, string $name): self
     {
         $this->operations[] = new DropForeignKey($table, $name);
+        return $this;
+    }
+
+    public function sql(string $sql): self
+    {
+        $this->operations[] = new RawSql($sql);
         return $this;
     }
 

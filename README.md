@@ -100,6 +100,9 @@ return [
 # Generate a migration from schema diff
 vendor/bin/rowcast-schema diff
 
+# Generate an empty migration file
+vendor/bin/rowcast-schema make
+
 # Apply pending migrations
 vendor/bin/rowcast-schema migrate
 
@@ -154,6 +157,15 @@ $table->column('status', ColumnType::String)->length(50);
 $table->column('payload', 'jsonb'); // custom raw DB type
 ```
 
+To execute arbitrary SQL inside a migration:
+
+```php
+public function up(SchemaBuilder $schema): void
+{
+    $schema->sql("UPDATE users SET status = 'active' WHERE status IS NULL");
+}
+```
+
 `column()` accepts:
 
 - `ColumnType` enum values (`ColumnType::String`, `ColumnType::Datetime`, ...)
@@ -184,6 +196,7 @@ vendor/bin/rowcast-schema <command> [options]
 |---------|-------------|
 | `diff` | Generate a migration from schema changes |
 | `diff --dry-run` | Preview operations without generating a file |
+| `make` | Generate an empty migration file |
 | `migrate` | Apply all pending migrations |
 | `rollback` | Rollback the latest migration |
 | `rollback --step=N` | Rollback the last N migrations |
@@ -269,6 +282,7 @@ AsceticSoft\RowcastSchema\
     └── Command\
         ├── CommandInterface          # Command contract
         ├── DiffCommand               # diff command
+        ├── MakeCommand               # make command
         ├── MigrateCommand            # migrate command
         ├── RollbackCommand           # rollback command
         └── StatusCommand             # status command

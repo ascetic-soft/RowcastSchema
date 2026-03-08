@@ -13,6 +13,7 @@ use AsceticSoft\RowcastSchema\Diff\Operation\DropColumn;
 use AsceticSoft\RowcastSchema\Diff\Operation\DropForeignKey;
 use AsceticSoft\RowcastSchema\Diff\Operation\DropIndex;
 use AsceticSoft\RowcastSchema\Diff\Operation\DropTable;
+use AsceticSoft\RowcastSchema\Diff\Operation\RawSql;
 use AsceticSoft\RowcastSchema\Schema\Column;
 use AsceticSoft\RowcastSchema\Schema\ColumnType;
 use AsceticSoft\RowcastSchema\SchemaBuilder\SchemaBuilder;
@@ -34,7 +35,8 @@ final class SchemaBuilderTest extends TestCase
             ->addIndex('users', 'idx_users_email', ['email'], unique: true)
             ->dropIndex('users', 'idx_users_legacy')
             ->addForeignKey('users', 'fk_users_account', ['id'], 'accounts', ['id'], 'CASCADE', 'RESTRICT')
-            ->dropForeignKey('users', 'fk_users_old');
+            ->dropForeignKey('users', 'fk_users_old')
+            ->sql('SELECT 1');
 
         $operations = $builder->getOperations();
         $classes = array_map(static fn (object $operation): string => $operation::class, $operations);
@@ -49,6 +51,7 @@ final class SchemaBuilderTest extends TestCase
             DropIndex::class,
             AddForeignKey::class,
             DropForeignKey::class,
+            RawSql::class,
         ], $classes);
     }
 
