@@ -121,7 +121,28 @@ vendor/bin/rowcast-schema status
 
 ### Абстрактные типы колонок
 
-`integer`, `smallint`, `bigint`, `string`, `text`, `boolean`, `decimal`, `float`, `double`, `datetime`, `date`, `time`, `timestamp`, `uuid`, `json`, `binary`, `enum`
+`integer`, `smallint`, `bigint`, `string`, `text`, `boolean`, `decimal`, `float`, `double`, `datetime`, `date`, `time`, `timestamp`, `timestamptz`, `uuid`, `json`, `binary`, `enum`
+
+### Кастомные типы БД (pgvector/citext и т.д.)
+
+В schema-файлах можно указывать и raw-строки типов БД в `type`.
+Неизвестные типы сохраняются как custom `databaseType` и попадают в SQL без преобразования.
+
+```php
+return [
+    'tables' => [
+        'embeddings' => [
+            'columns' => [
+                'id' => ['type' => 'bigint', 'primaryKey' => true, 'autoIncrement' => true],
+                'gigachat_vector' => ['type' => 'vector(1536)', 'nullable' => true],
+                'title_ci' => ['type' => 'citext'],
+            ],
+        ],
+    ],
+];
+```
+
+Это работает для extension-типов вроде `vector` (pgvector), `citext`, типов PostGIS и других vendor-specific типов.
 
 ### Параметры колонки
 

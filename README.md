@@ -127,7 +127,28 @@ The format is detected automatically by file extension.
 
 ### Abstract column types
 
-`integer`, `smallint`, `bigint`, `string`, `text`, `boolean`, `decimal`, `float`, `double`, `datetime`, `date`, `time`, `timestamp`, `uuid`, `json`, `binary`, `enum`
+`integer`, `smallint`, `bigint`, `string`, `text`, `boolean`, `decimal`, `float`, `double`, `datetime`, `date`, `time`, `timestamp`, `timestamptz`, `uuid`, `json`, `binary`, `enum`
+
+### Custom database types (pgvector/citext/etc.)
+
+Schema files may also use raw database type strings in `type`.
+Unknown types are preserved as custom `databaseType` and emitted to SQL as-is.
+
+```php
+return [
+    'tables' => [
+        'embeddings' => [
+            'columns' => [
+                'id' => ['type' => 'bigint', 'primaryKey' => true, 'autoIncrement' => true],
+                'gigachat_vector' => ['type' => 'vector(1536)', 'nullable' => true],
+                'title_ci' => ['type' => 'citext'],
+            ],
+        ],
+    ],
+];
+```
+
+This works for extension types such as `vector` (pgvector), `citext`, PostGIS types, and other vendor-specific types.
 
 ### Column properties
 
