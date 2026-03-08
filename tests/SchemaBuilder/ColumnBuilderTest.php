@@ -48,4 +48,23 @@ final class ColumnBuilderTest extends TestCase
         self::assertTrue($column->unsigned);
         self::assertSame('Money amount', $column->comment);
     }
+
+    public function testSupportsLengthAndEnumValuesConfiguration(): void
+    {
+        $column = new ColumnBuilder('status', ColumnType::Enum)
+            ->length(32)
+            ->values(['draft', 'published'])
+            ->nullable(false)
+            ->primaryKey(false)
+            ->autoIncrement(false)
+            ->unsigned(false)
+            ->toColumn();
+
+        self::assertSame(32, $column->length);
+        self::assertSame(['draft', 'published'], $column->enumValues);
+        self::assertFalse($column->nullable);
+        self::assertFalse($column->primaryKey);
+        self::assertFalse($column->autoIncrement);
+        self::assertFalse($column->unsigned);
+    }
 }

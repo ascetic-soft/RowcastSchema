@@ -104,4 +104,93 @@ final class ArraySchemaBuilderTest extends TestCase
             ],
         ]);
     }
+
+    public function testThrowsWhenIndexesAreNotAMapping(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Table "posts" indexes must be mapping.');
+
+        new ArraySchemaBuilder()->build([
+            'tables' => [
+                'posts' => [
+                    'columns' => [
+                        'id' => ['type' => 'integer'],
+                    ],
+                    'indexes' => 'invalid',
+                ],
+            ],
+        ]);
+    }
+
+    public function testThrowsWhenForeignKeyReferencesAreMissing(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Foreign key "fk_posts_user" references is required.');
+
+        new ArraySchemaBuilder()->build([
+            'tables' => [
+                'posts' => [
+                    'columns' => [
+                        'id' => ['type' => 'integer'],
+                        'user_id' => ['type' => 'integer'],
+                    ],
+                    'foreignKeys' => [
+                        'fk_posts_user' => [
+                            'columns' => ['user_id'],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    public function testThrowsWhenColumnCommentIsNotString(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Column comment must be string.');
+
+        new ArraySchemaBuilder()->build([
+            'tables' => [
+                'posts' => [
+                    'columns' => [
+                        'title' => [
+                            'type' => 'string',
+                            'comment' => ['invalid'],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    public function testThrowsWhenColumnLengthIsNotNumeric(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Column length must be integer.');
+
+        new ArraySchemaBuilder()->build([
+            'tables' => [
+                'posts' => [
+                    'columns' => [
+                        'title' => [
+                            'type' => 'string',
+                            'length' => 'abc',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    public function testThrowsWhenTablesKeysAreNotStrings(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Schema must contain "tables" mapping.');
+
+        new ArraySchemaBuilder()->build([
+            'tables' => [
+                ['columns' => ['id' => ['type' => 'integer']]],
+            ],
+        ]);
+    }
 }
