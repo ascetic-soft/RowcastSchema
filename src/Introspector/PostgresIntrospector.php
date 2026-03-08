@@ -55,6 +55,11 @@ final readonly class PostgresIntrospector implements IntrospectorInterface
             }
 
             $abstractType = $this->typeMapper->toAbstractType($udtName);
+            $databaseType = null;
+            if ($abstractType === null) {
+                $abstractType = ColumnType::Text;
+                $databaseType = $udtName;
+            }
             $length = $abstractType === ColumnType::String ? $this->toNullableInt($row['character_maximum_length'] ?? null) : null;
             $precision = $abstractType === ColumnType::Decimal ? $this->toNullableInt($row['numeric_precision'] ?? null) : null;
             $scale = $abstractType === ColumnType::Decimal ? $this->toNullableInt($row['numeric_scale'] ?? null) : null;
@@ -70,6 +75,7 @@ final readonly class PostgresIntrospector implements IntrospectorInterface
                 length: $length,
                 precision: $precision,
                 scale: $scale,
+                databaseType: $databaseType,
             );
         }
 

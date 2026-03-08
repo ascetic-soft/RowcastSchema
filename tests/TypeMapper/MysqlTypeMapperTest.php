@@ -43,6 +43,6 @@ final class MysqlTypeMapperTest extends TestCase
         self::assertSame(ColumnType::Integer, $mapper->toAbstractType('int(11)'));
         self::assertSame(ColumnType::Uuid, $mapper->toAbstractType('char(36)'));
         self::assertSame(ColumnType::Enum, $mapper->toAbstractType("enum('a','b')"));
-        self::assertSame(ColumnType::String, $mapper->toAbstractType('unknown_type'));
+        self::assertNull($mapper->toAbstractType('unknown_type'));
     }
 }

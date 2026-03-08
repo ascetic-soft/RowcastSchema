@@ -89,12 +89,9 @@ final class ArraySchemaBuilderTest extends TestCase
         new ArraySchemaBuilder()->build([]);
     }
 
-    public function testThrowsOnUnknownColumnType(): void
+    public function testAcceptsUnknownColumnTypeAsCustomDatabaseType(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unknown column type "citext" for column "title".');
-
-        new ArraySchemaBuilder()->build([
+        $schema = new ArraySchemaBuilder()->build([
             'tables' => [
                 'posts' => [
                     'columns' => [
@@ -103,6 +100,35 @@ final class ArraySchemaBuilderTest extends TestCase
                 ],
             ],
         ]);
+
+        $posts = $schema->getTable('posts');
+        self::assertNotNull($posts);
+
+        $title = $posts->getColumn('title');
+        self::assertNotNull($title);
+        self::assertSame(ColumnType::Text, $title->type);
+        self::assertSame('citext', $title->databaseType);
+    }
+
+    public function testAcceptsParameterizedCustomType(): void
+    {
+        $schema = new ArraySchemaBuilder()->build([
+            'tables' => [
+                'embeddings' => [
+                    'columns' => [
+                        'gigachat_vector' => ['type' => 'vector(1536)'],
+                    ],
+                ],
+            ],
+        ]);
+
+        $embeddings = $schema->getTable('embeddings');
+        self::assertNotNull($embeddings);
+
+        $vector = $embeddings->getColumn('gigachat_vector');
+        self::assertNotNull($vector);
+        self::assertSame(ColumnType::Text, $vector->type);
+        self::assertSame('vector(1536)', $vector->databaseType);
     }
 
     public function testThrowsWhenIndexesAreNotAMapping(): void

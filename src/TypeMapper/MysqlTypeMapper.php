@@ -40,7 +40,7 @@ final class MysqlTypeMapper implements TypeMapperInterface
         };
     }
 
-    public function toAbstractType(string $dbType): ColumnType
+    public function toAbstractType(string $dbType): ?ColumnType
     {
         $normalized = strtolower($dbType);
 
@@ -62,7 +62,7 @@ final class MysqlTypeMapper implements TypeMapperInterface
             str_starts_with($normalized, 'json') => ColumnType::Json,
             str_starts_with($normalized, 'blob') => ColumnType::Binary,
             str_starts_with($normalized, 'enum') => ColumnType::Enum,
-            default => ColumnType::String,
+            default => null,
         };
     }
 }

@@ -37,7 +37,7 @@ final class PostgresTypeMapper implements TypeMapperInterface
         };
     }
 
-    public function toAbstractType(string $dbType): ColumnType
+    public function toAbstractType(string $dbType): ?ColumnType
     {
         $normalized = strtolower($dbType);
 
@@ -68,7 +68,7 @@ final class PostgresTypeMapper implements TypeMapperInterface
             $normalized === 'uuid' => ColumnType::Uuid,
             str_contains($normalized, 'json') => ColumnType::Json,
             str_contains($normalized, 'bytea') => ColumnType::Binary,
-            default => ColumnType::String,
+            default => null,
         };
     }
 }

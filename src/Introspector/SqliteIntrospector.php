@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AsceticSoft\RowcastSchema\Introspector;
 
 use AsceticSoft\RowcastSchema\Schema\Column;
+use AsceticSoft\RowcastSchema\Schema\ColumnType;
 use AsceticSoft\RowcastSchema\Schema\Schema;
 use AsceticSoft\RowcastSchema\Schema\Table;
 use AsceticSoft\RowcastSchema\TypeMapper\TypeMapperInterface;
@@ -42,13 +43,22 @@ final readonly class SqliteIntrospector implements IntrospectorInterface
                     $pk[] = $name;
                 }
 
+                $rawType = (string)$col['type'];
+                $abstractType = $this->typeMapper->toAbstractType($rawType);
+                $databaseType = null;
+                if ($abstractType === null) {
+                    $abstractType = ColumnType::Text;
+                    $databaseType = $rawType;
+                }
+
                 $columns[$name] = new Column(
                     name: $name,
-                    type: $this->typeMapper->toAbstractType((string)$col['type']),
+                    type: $abstractType,
                     nullable: (int)$col['notnull'] === 0,
                     default: $col['dflt_value'],
                     primaryKey: $isPrimary,
                     autoIncrement: false,
+                    databaseType: $databaseType,
                 );
             }
 

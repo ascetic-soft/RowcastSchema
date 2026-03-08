@@ -62,6 +62,11 @@ final readonly class MysqlIntrospector implements IntrospectorInterface
             }
 
             $abstractType = $this->typeMapper->toAbstractType($columnType);
+            $databaseType = null;
+            if ($abstractType === null) {
+                $abstractType = ColumnType::Text;
+                $databaseType = $columnType;
+            }
             $length = $abstractType === ColumnType::String ? $this->extractLength($columnType) : null;
 
             $tables[$tableName]['columns'][$columnName] = new Column(
@@ -72,6 +77,7 @@ final readonly class MysqlIntrospector implements IntrospectorInterface
                 primaryKey: $isPrimary,
                 autoIncrement: str_contains($extra, 'auto_increment'),
                 length: $length,
+                databaseType: $databaseType,
             );
         }
 

@@ -136,9 +136,12 @@ final class ArraySchemaBuilder
             throw new \InvalidArgumentException(\sprintf('Column "%s" must define string "type".', $columnName));
         }
 
-        $type = ColumnType::tryFrom($this->normalizeColumnType($typeRaw));
+        $normalizedType = $this->normalizeColumnType($typeRaw);
+        $type = ColumnType::tryFrom($normalizedType);
+        $databaseType = null;
         if ($type === null) {
-            throw new \InvalidArgumentException(\sprintf('Unknown column type "%s" for column "%s".', $typeRaw, $columnName));
+            $type = ColumnType::Text;
+            $databaseType = \trim($typeRaw);
         }
 
         $enumValuesRaw = $columnRaw['values'] ?? [];
@@ -166,6 +169,7 @@ final class ArraySchemaBuilder
             unsigned: (bool)($columnRaw['unsigned'] ?? false),
             comment: isset($columnRaw['comment']) ? $this->toString($columnRaw['comment'], 'Column comment must be string.') : null,
             enumValues: $this->toStringList($enumValuesRaw, \sprintf('Column "%s" enum values must be list.', $columnName)),
+            databaseType: $databaseType,
         );
     }
 

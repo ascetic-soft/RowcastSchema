@@ -79,6 +79,6 @@ final class PostgresTypeMapperTest extends TestCase
         self::assertSame(ColumnType::Binary, $mapper->toAbstractType('bytea'));
         self::assertSame(ColumnType::Date, $mapper->toAbstractType('date'));
         self::assertSame(ColumnType::Time, $mapper->toAbstractType('TIME(0) WITHOUT TIME ZONE'));
-        self::assertSame(ColumnType::String, $mapper->toAbstractType('some_unknown_type'));
+        self::assertNull($mapper->toAbstractType('some_unknown_type'));
     }
 }

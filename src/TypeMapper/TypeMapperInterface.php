@@ -11,5 +11,5 @@ interface TypeMapperInterface
 {
     public function toSqlType(Column $column): string;
 
-    public function toAbstractType(string $dbType): ColumnType;
+    public function toAbstractType(string $dbType): ?ColumnType;
 }

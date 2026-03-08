@@ -47,6 +47,6 @@ final class SqliteTypeMapperTest extends TestCase
         self::assertSame(ColumnType::Text, $mapper->toAbstractType('CLOB'));
         self::assertSame(ColumnType::Double, $mapper->toAbstractType('DOUBLE'));
         self::assertSame(ColumnType::Binary, $mapper->toAbstractType('BLOB'));
-        self::assertSame(ColumnType::Text, $mapper->toAbstractType('JSON'));
+        self::assertNull($mapper->toAbstractType('JSON'));
     }
 }

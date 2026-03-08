@@ -16,4 +16,19 @@ final class PdoDriverResolverTest extends TestCase
 
         self::assertSame('sqlite', $resolver->resolve($pdo));
     }
+
+    public function testThrowsWhenDriverNameCannotBeResolved(): void
+    {
+        $pdo = $this->getMockBuilder(\PDO::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['getAttribute'])
+            ->getMock();
+        $pdo->method('getAttribute')->with(\PDO::ATTR_DRIVER_NAME)->willReturn('');
+
+        $resolver = new PdoDriverResolver();
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Unable to detect PDO driver name.');
+        $resolver->resolve($pdo);
+    }
 }

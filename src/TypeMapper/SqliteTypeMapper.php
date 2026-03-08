@@ -37,7 +37,7 @@ final class SqliteTypeMapper implements TypeMapperInterface
         };
     }
 
-    public function toAbstractType(string $dbType): ColumnType
+    public function toAbstractType(string $dbType): ?ColumnType
     {
         $normalized = strtolower($dbType);
 
@@ -46,7 +46,7 @@ final class SqliteTypeMapper implements TypeMapperInterface
             str_contains($normalized, 'char'), str_contains($normalized, 'text'), str_contains($normalized, 'clob') => ColumnType::Text,
             str_contains($normalized, 'real'), str_contains($normalized, 'floa'), str_contains($normalized, 'doub') => ColumnType::Double,
             str_contains($normalized, 'blob') => ColumnType::Binary,
-            default => ColumnType::Text,
+            default => null,
         };
     }
 }
