@@ -101,7 +101,7 @@ final readonly class PostgresPlatform extends AbstractPlatform
         return $statements;
     }
 
-    private function compileDefaultValue(mixed $value): string
+    protected function compileDefaultValue(mixed $value): string
     {
         if (\is_int($value) || \is_float($value)) {
             return (string)$value;

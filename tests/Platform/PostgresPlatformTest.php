@@ -30,7 +30,10 @@ final class PostgresPlatformTest extends TestCase
         $platform = new PostgresPlatform(new PostgresTypeMapper());
 
         $addColumn = new AddColumn('users', new Column('is_active', ColumnType::Boolean, default: true));
-        self::assertSame(['ALTER TABLE "users" ADD COLUMN "is_active" BOOLEAN NOT NULL DEFAULT 1'], $platform->toSql($addColumn));
+        self::assertSame(['ALTER TABLE "users" ADD COLUMN "is_active" BOOLEAN NOT NULL DEFAULT true'], $platform->toSql($addColumn));
+
+        $addFalseColumn = new AddColumn('users', new Column('disabled', ColumnType::Boolean, default: false));
+        self::assertSame(['ALTER TABLE "users" ADD COLUMN "disabled" BOOLEAN NOT NULL DEFAULT false'], $platform->toSql($addFalseColumn));
 
         $addIndex = new AddIndex('users', new Index('idx_users_email', ['email']));
         self::assertSame(['CREATE INDEX "idx_users_email" ON "users" ("email")'], $platform->toSql($addIndex));
