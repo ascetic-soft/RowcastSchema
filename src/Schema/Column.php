@@ -11,7 +11,7 @@ final readonly class Column
      */
     public function __construct(
         public string $name,
-        public ColumnType $type,
+        public ?ColumnType $type = null,
         public bool $nullable = false,
         public mixed $default = null,
         public bool $primaryKey = false,
@@ -30,6 +30,10 @@ final readonly class Column
 
         if ($this->databaseType !== null && \trim($this->databaseType) === '') {
             throw new \InvalidArgumentException('Custom database type cannot be empty.');
+        }
+
+        if ($this->type === null && $this->databaseType === null) {
+            throw new \InvalidArgumentException('Column requires either "type" or "databaseType".');
         }
 
         if ($this->databaseType === null && $this->type === ColumnType::Decimal && ($this->precision === null || $this->scale === null)) {

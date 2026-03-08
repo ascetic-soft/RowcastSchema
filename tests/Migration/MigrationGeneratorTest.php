@@ -56,6 +56,29 @@ final class MigrationGeneratorTest extends TestCase
         @rmdir($dir);
     }
 
+    public function testGeneratesAddColumnWithCustomDatabaseTypeWithoutTypeArgument(): void
+    {
+        $content = $this->generateAndRead([
+            new AddColumn('ozon_categories', new Column(name: 'gigachat_embedding', databaseType: 'vector(1024)')),
+            new AddColumn('ozon_categories', new Column(name: 'openai_embedding', databaseType: 'vector(1536)')),
+        ]);
+
+        self::assertStringContainsString(
+            "\$schema->addColumn('ozon_categories', new Column(name: 'gigachat_embedding', databaseType: 'vector(1024)'));",
+            $content,
+        );
+        self::assertStringContainsString(
+            "\$schema->addColumn('ozon_categories', new Column(name: 'openai_embedding', databaseType: 'vector(1536)'));",
+            $content,
+        );
+        self::assertStringNotContainsString(
+            "new Column(name: 'gigachat_embedding', type: ColumnType::Text, databaseType: 'vector(1024)')",
+            $content,
+        );
+        self::assertStringContainsString("\$schema->dropColumn('ozon_categories', 'gigachat_embedding');", $content);
+        self::assertStringContainsString("\$schema->dropColumn('ozon_categories', 'openai_embedding');", $content);
+    }
+
     public function testGeneratesCreateTableAndReverseDropTable(): void
     {
         $table = new Table(

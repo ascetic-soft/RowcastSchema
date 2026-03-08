@@ -7,6 +7,7 @@ namespace AsceticSoft\RowcastSchema\Tests\Parser;
 use AsceticSoft\RowcastSchema\Parser\AttributeSchemaBuilder;
 use AsceticSoft\RowcastSchema\Schema\ColumnType;
 use AsceticSoft\RowcastSchema\Tests\Fixtures\Entity\InvalidTypeEntity;
+use AsceticSoft\RowcastSchema\Tests\Fixtures\Entity\OzonCategoryEmbedding;
 use AsceticSoft\RowcastSchema\Tests\Fixtures\Entity\Post;
 use AsceticSoft\RowcastSchema\Tests\Fixtures\Entity\User;
 use PHPUnit\Framework\TestCase;
@@ -52,5 +53,25 @@ final class AttributeSchemaBuilderTest extends TestCase
         new AttributeSchemaBuilder()->build([
             InvalidTypeEntity::class,
         ]);
+    }
+
+    public function testPreservesExplicitDatabaseTypeFromAttribute(): void
+    {
+        $schema = new AttributeSchemaBuilder()->build([
+            OzonCategoryEmbedding::class,
+        ]);
+
+        $categories = $schema->getTable('ozon_categories');
+        self::assertNotNull($categories);
+
+        $gigachat = $categories->getColumn('gigachat_embedding');
+        self::assertNotNull($gigachat);
+        self::assertSame(ColumnType::String, $gigachat->type);
+        self::assertSame('vector(1024)', $gigachat->databaseType);
+
+        $openai = $categories->getColumn('openai_embedding');
+        self::assertNotNull($openai);
+        self::assertSame(ColumnType::String, $openai->type);
+        self::assertSame('vector(1536)', $openai->databaseType);
     }
 }

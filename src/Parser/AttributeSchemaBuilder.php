@@ -89,7 +89,7 @@ final readonly class AttributeSchemaBuilder
                     unsigned: $columnAttribute->unsigned,
                     comment: $columnAttribute->comment,
                     enumValues: $enumValues,
-                    databaseType: $databaseType,
+                    databaseType: $columnAttribute->databaseType ?? $databaseType,
                 );
                 $columns[$columnName] = $column;
 

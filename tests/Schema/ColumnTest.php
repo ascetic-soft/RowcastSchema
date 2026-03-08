@@ -35,6 +35,14 @@ final class ColumnTest extends TestCase
         new Column('payload', ColumnType::Json, databaseType: '  ');
     }
 
+    public function testThrowsWhenTypeAndDatabaseTypeAreBothMissing(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Column requires either "type" or "databaseType".');
+
+        new Column('payload');
+    }
+
     public function testThrowsWhenDecimalMissingPrecisionOrScale(): void
     {
         $this->expectException(\InvalidArgumentException::class);

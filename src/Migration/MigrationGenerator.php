@@ -15,6 +15,7 @@ use AsceticSoft\RowcastSchema\Diff\Operation\DropIndex;
 use AsceticSoft\RowcastSchema\Diff\Operation\DropTable;
 use AsceticSoft\RowcastSchema\Diff\Operation\OperationInterface;
 use AsceticSoft\RowcastSchema\Schema\Column;
+use AsceticSoft\RowcastSchema\Schema\ColumnType;
 
 final class MigrationGenerator
 {
@@ -189,17 +190,17 @@ final class MigrationGenerator
     {
         $typeExpression = $column->databaseType !== null
             ? $this->exportValue($column->databaseType)
-            : 'ColumnType::' . ucfirst($column->type->value);
+            : 'ColumnType::' . ucfirst($this->requireColumnType($column)->value);
         $base = \sprintf("\$table->column('%s', %s)", $column->name, $typeExpression);
 
         if ($column->databaseType === null && $column->length !== null) {
             $base .= \sprintf('->length(%d)', $column->length);
-        } elseif ($column->databaseType === null && $column->type->value === 'string') {
+        } elseif ($column->databaseType === null && $this->requireColumnType($column) === ColumnType::String) {
             $base .= '->length(255)';
         }
         if ($column->databaseType === null && $column->precision !== null && $column->scale !== null) {
             $base .= \sprintf('->precision(%d, %d)', $column->precision, $column->scale);
-        } elseif ($column->databaseType === null && $column->type->value === 'decimal') {
+        } elseif ($column->databaseType === null && $this->requireColumnType($column) === ColumnType::Decimal) {
             $base .= '->precision(10, 2)';
         }
 
@@ -223,8 +224,10 @@ final class MigrationGenerator
     {
         $parts = [
             'name: ' . $this->exportValue($column->name),
-            'type: ColumnType::' . ucfirst($column->type->value),
         ];
+        if ($column->databaseType === null) {
+            $parts[] = 'type: ColumnType::' . ucfirst($this->requireColumnType($column)->value);
+        }
 
         if ($column->nullable) {
             $parts[] = 'nullable: true';
@@ -261,6 +264,15 @@ final class MigrationGenerator
         }
 
         return 'new Column(' . implode(', ', $parts) . ')';
+    }
+
+    private function requireColumnType(Column $column): ColumnType
+    {
+        if ($column->type instanceof ColumnType) {
+            return $column->type;
+        }
+
+        throw new \LogicException(\sprintf('Column "%s" type is required when databaseType is not set.', $column->name));
     }
 
     /**
