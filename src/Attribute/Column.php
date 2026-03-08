@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace AsceticSoft\RowcastSchema\Attribute;
 
+use AsceticSoft\RowcastSchema\Schema\ColumnType;
+
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
 final readonly class Column
 {
-    /**
-     * @param list<string> $values
-     */
     public function __construct(
         public ?string $name = null,
-        public ?string $type = null,
+        public ?ColumnType $type = null,
         public ?bool $nullable = null,
         public mixed $default = null,
         public bool $primaryKey = false,
@@ -22,7 +21,6 @@ final readonly class Column
         public ?int $scale = null,
         public bool $unsigned = false,
         public ?string $comment = null,
-        public array $values = [],
         public ?string $databaseType = null,
     ) {
     }

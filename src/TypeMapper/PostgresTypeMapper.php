@@ -11,7 +11,7 @@ final class PostgresTypeMapper implements TypeMapperInterface
 {
     public function toSqlType(Column $column): string
     {
-        return $column->databaseType ?? match ($this->requireColumnType($column)) {
+        return $column->databaseType ?? match ($column->requireType()) {
             ColumnType::Integer => $column->autoIncrement ? 'SERIAL' : 'INTEGER',
             ColumnType::Smallint => $column->autoIncrement ? 'SMALLSERIAL' : 'SMALLINT',
             ColumnType::Bigint => $column->autoIncrement ? 'BIGSERIAL' : 'BIGINT',
@@ -30,15 +30,6 @@ final class PostgresTypeMapper implements TypeMapperInterface
             ColumnType::Json => 'JSONB',
             ColumnType::Binary => 'BYTEA',
         };
-    }
-
-    private function requireColumnType(Column $column): ColumnType
-    {
-        if ($column->type instanceof ColumnType) {
-            return $column->type;
-        }
-
-        throw new \LogicException(\sprintf('Column "%s" type is required when databaseType is not set.', $column->name));
     }
 
     public function toAbstractType(string $dbType): ?ColumnType

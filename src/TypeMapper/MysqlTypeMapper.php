@@ -11,7 +11,7 @@ final class MysqlTypeMapper implements TypeMapperInterface
 {
     public function toSqlType(Column $column): string
     {
-        return $column->databaseType ?? match ($this->requireColumnType($column)) {
+        return $column->databaseType ?? match ($column->requireType()) {
             ColumnType::Integer => 'INT',
             ColumnType::Smallint => 'SMALLINT',
             ColumnType::Bigint => 'BIGINT',
@@ -37,15 +37,6 @@ final class MysqlTypeMapper implements TypeMapperInterface
                 )),
             ),
         };
-    }
-
-    private function requireColumnType(Column $column): ColumnType
-    {
-        if ($column->type instanceof ColumnType) {
-            return $column->type;
-        }
-
-        throw new \LogicException(\sprintf('Column "%s" type is required when databaseType is not set.', $column->name));
     }
 
     public function toAbstractType(string $dbType): ?ColumnType

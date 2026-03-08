@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AsceticSoft\RowcastSchema\Tests\Attribute;
 
 use AsceticSoft\RowcastSchema\Attribute\Column;
+use AsceticSoft\RowcastSchema\Schema\ColumnType;
 use PHPUnit\Framework\TestCase;
 
 final class ColumnTest extends TestCase
@@ -24,7 +25,13 @@ final class ColumnTest extends TestCase
         self::assertNull($attribute->scale);
         self::assertFalse($attribute->unsigned);
         self::assertNull($attribute->comment);
-        self::assertSame([], $attribute->values);
         self::assertNull($attribute->databaseType);
+    }
+
+    public function testStoresExplicitEnumType(): void
+    {
+        $attribute = new Column(type: ColumnType::Integer);
+
+        self::assertSame(ColumnType::Integer, $attribute->type);
     }
 }

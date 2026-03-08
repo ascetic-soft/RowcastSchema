@@ -215,7 +215,7 @@ final class OperationDescriber
             return $column->databaseType;
         }
 
-        $type = $this->requireColumnType($column)->value;
+        $type = $column->requireType()->value;
         if ($column->length !== null) {
             return \sprintf('%s(%d)', $type, $column->length);
         }
@@ -225,15 +225,6 @@ final class OperationDescriber
         }
 
         return $type;
-    }
-
-    private function requireColumnType(Column $column): \AsceticSoft\RowcastSchema\Schema\ColumnType
-    {
-        if ($column->type instanceof \AsceticSoft\RowcastSchema\Schema\ColumnType) {
-            return $column->type;
-        }
-
-        throw new \LogicException(\sprintf('Column "%s" type is required when databaseType is not set.', $column->name));
     }
 
     private function truncateSql(string $sql): string

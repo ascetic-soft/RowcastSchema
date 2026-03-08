@@ -201,8 +201,30 @@ final readonly class AttributeSchemaBuilder
         \ReflectionProperty $property,
         string $className,
     ): array {
-        if (\is_string($columnAttribute->type)) {
-            return $this->resolveExplicitType($columnAttribute->type, $columnAttribute->values);
+        if ($columnAttribute->type instanceof ColumnType) {
+            if ($columnAttribute->type !== ColumnType::Enum) {
+                return [$columnAttribute->type, null, []];
+            }
+
+            $propertyType = $this->extractPropertyTypeName($property);
+            if ($propertyType === null || !enum_exists($propertyType) || !is_subclass_of($propertyType, \BackedEnum::class)) {
+                throw new \InvalidArgumentException(\sprintf(
+                    'Column "%s::%s" with type ColumnType::Enum requires a backed enum property.',
+                    $className,
+                    $property->getName(),
+                ));
+            }
+
+            $reflectionEnum = new \ReflectionEnum($propertyType);
+            if ($reflectionEnum->getBackingType()?->getName() !== 'string') {
+                throw new \InvalidArgumentException(\sprintf(
+                    'Column "%s::%s" with type ColumnType::Enum requires a string-backed enum property.',
+                    $className,
+                    $property->getName(),
+                ));
+            }
+
+            return [ColumnType::Enum, null, $this->extractStringEnumValues($reflectionEnum)];
         }
 
         $propertyType = $this->extractPropertyTypeName($property);
@@ -217,28 +239,7 @@ final readonly class AttributeSchemaBuilder
         if (enum_exists($propertyType) && is_subclass_of($propertyType, \BackedEnum::class)) {
             $reflectionEnum = new \ReflectionEnum($propertyType);
             if ($reflectionEnum->getBackingType()?->getName() === 'string') {
-                if ($columnAttribute->values !== []) {
-                    return [ColumnType::Enum, null, $this->toStringList(
-                        $columnAttribute->values,
-                        \sprintf(
-                            'Column "%s" enum values must be list.',
-                            $property->getName(),
-                        ),
-                    )];
-                }
-
-                $enumValues = [];
-                /** @var list<\ReflectionEnumBackedCase> $cases */
-                $cases = $reflectionEnum->getCases();
-                foreach ($cases as $case) {
-                    $value = $case->getBackingValue();
-                    if (!\is_string($value)) {
-                        continue;
-                    }
-                    $enumValues[] = $value;
-                }
-
-                return [ColumnType::Enum, null, $enumValues];
+                return [ColumnType::Enum, null, $this->extractStringEnumValues($reflectionEnum)];
             }
 
             return [ColumnType::Integer, null, []];
@@ -252,30 +253,6 @@ final readonly class AttributeSchemaBuilder
             'array' => [ColumnType::Json, null, []],
             default => $this->resolveDateTimeOrFail($propertyType, $className, $property->getName()),
         };
-    }
-
-    /**
-     * @param list<string> $values
-     *
-     * @return array{0: ColumnType, 1: ?string, 2: list<string>}
-     */
-    private function resolveExplicitType(string $typeRaw, array $values): array
-    {
-        $normalizedType = $this->normalizeColumnType($typeRaw);
-        $type = ColumnType::tryFrom($normalizedType);
-        if ($type === null) {
-            return [ColumnType::Text, trim($typeRaw), []];
-        }
-
-        if ($type !== ColumnType::Enum) {
-            return [$type, null, []];
-        }
-
-        return [
-            ColumnType::Enum,
-            null,
-            $this->toStringList($values, 'Column enum values must be list.'),
-        ];
     }
 
     /**
@@ -324,15 +301,25 @@ final readonly class AttributeSchemaBuilder
         return null;
     }
 
-    private function normalizeColumnType(string $typeRaw): string
+    /**
+     * @param \ReflectionEnum<\BackedEnum> $enum
+     *
+     * @return list<string>
+     */
+    private function extractStringEnumValues(\ReflectionEnum $enum): array
     {
-        $normalized = strtolower(trim($typeRaw));
+        $enumValues = [];
+        /** @var list<\ReflectionEnumBackedCase> $cases */
+        $cases = $enum->getCases();
+        foreach ($cases as $case) {
+            $value = $case->getBackingValue();
+            if (!\is_string($value)) {
+                continue;
+            }
+            $enumValues[] = $value;
+        }
 
-        return match ($normalized) {
-            'jsonb' => ColumnType::Json->value,
-            'timestamp with time zone' => ColumnType::Timestamptz->value,
-            default => $normalized,
-        };
+        return $enumValues;
     }
 
     /**

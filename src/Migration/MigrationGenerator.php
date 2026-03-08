@@ -190,17 +190,17 @@ final class MigrationGenerator
     {
         $typeExpression = $column->databaseType !== null
             ? $this->exportValue($column->databaseType)
-            : 'ColumnType::' . ucfirst($this->requireColumnType($column)->value);
+            : 'ColumnType::' . ucfirst($column->requireType()->value);
         $base = \sprintf("\$table->column('%s', %s)", $column->name, $typeExpression);
 
         if ($column->databaseType === null && $column->length !== null) {
             $base .= \sprintf('->length(%d)', $column->length);
-        } elseif ($column->databaseType === null && $this->requireColumnType($column) === ColumnType::String) {
+        } elseif ($column->databaseType === null && $column->requireType() === ColumnType::String) {
             $base .= '->length(255)';
         }
         if ($column->databaseType === null && $column->precision !== null && $column->scale !== null) {
             $base .= \sprintf('->precision(%d, %d)', $column->precision, $column->scale);
-        } elseif ($column->databaseType === null && $this->requireColumnType($column) === ColumnType::Decimal) {
+        } elseif ($column->databaseType === null && $column->requireType() === ColumnType::Decimal) {
             $base .= '->precision(10, 2)';
         }
 
@@ -226,7 +226,7 @@ final class MigrationGenerator
             'name: ' . $this->exportValue($column->name),
         ];
         if ($column->databaseType === null) {
-            $parts[] = 'type: ColumnType::' . ucfirst($this->requireColumnType($column)->value);
+            $parts[] = 'type: ColumnType::' . ucfirst($column->requireType()->value);
         }
 
         if ($column->nullable) {
@@ -264,15 +264,6 @@ final class MigrationGenerator
         }
 
         return 'new Column(' . implode(', ', $parts) . ')';
-    }
-
-    private function requireColumnType(Column $column): ColumnType
-    {
-        if ($column->type instanceof ColumnType) {
-            return $column->type;
-        }
-
-        throw new \LogicException(\sprintf('Column "%s" type is required when databaseType is not set.', $column->name));
     }
 
     /**

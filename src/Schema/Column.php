@@ -44,4 +44,13 @@ final readonly class Column
             throw new \InvalidArgumentException('Enum column requires non-empty "enumValues".');
         }
     }
+
+    public function requireType(): ColumnType
+    {
+        if ($this->type instanceof ColumnType) {
+            return $this->type;
+        }
+
+        throw new \LogicException(\sprintf('Column "%s" type is required when databaseType is not set.', $this->name));
+    }
 }

@@ -11,7 +11,7 @@ final class SqliteTypeMapper implements TypeMapperInterface
 {
     public function toSqlType(Column $column): string
     {
-        return $column->databaseType ?? match ($this->requireColumnType($column)) {
+        return $column->databaseType ?? match ($column->requireType()) {
             ColumnType::Integer,
             ColumnType::Smallint,
             ColumnType::Bigint,
@@ -31,15 +31,6 @@ final class SqliteTypeMapper implements TypeMapperInterface
             ColumnType::Double => 'REAL',
             ColumnType::Binary => 'BLOB',
         };
-    }
-
-    private function requireColumnType(Column $column): ColumnType
-    {
-        if ($column->type instanceof ColumnType) {
-            return $column->type;
-        }
-
-        throw new \LogicException(\sprintf('Column "%s" type is required when databaseType is not set.', $column->name));
     }
 
     public function toAbstractType(string $dbType): ?ColumnType
