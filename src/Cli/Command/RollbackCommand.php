@@ -13,8 +13,7 @@ final readonly class RollbackCommand implements CommandInterface
     public function __construct(
         private MigrationRunner $runner,
         private ConsoleOutput $output,
-    )
-    {
+    ) {
     }
 
     public function execute(array $args, Config $config): int

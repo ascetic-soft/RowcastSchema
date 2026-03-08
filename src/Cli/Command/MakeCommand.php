@@ -13,8 +13,7 @@ final readonly class MakeCommand implements CommandInterface
     public function __construct(
         private MigrationGenerator $generator,
         private ConsoleOutput $output,
-    )
-    {
+    ) {
     }
 
     public function execute(array $args, Config $config): int
