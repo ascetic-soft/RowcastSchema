@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace AsceticSoft\RowcastSchema\Tests\Cli\Command;
 
 use AsceticSoft\RowcastSchema\Cli\Command\StatusCommand;
+use AsceticSoft\RowcastSchema\Cli\ConsoleOutput;
 use AsceticSoft\RowcastSchema\Cli\Config;
+use AsceticSoft\RowcastSchema\Cli\OperationDescriber;
 use AsceticSoft\RowcastSchema\Cli\TableIgnoreMatcher;
 use AsceticSoft\RowcastSchema\Diff\SchemaDiffer;
 use AsceticSoft\RowcastSchema\Introspector\IntrospectorFactory;
@@ -61,7 +63,16 @@ final class StatusCommandTest extends TestCase
             }
         };
 
-        $command = new StatusCommand($parser, $factory, new SchemaDiffer(), new MigrationLoader(), $repo, new TableIgnoreMatcher());
+        $command = new StatusCommand(
+            $parser,
+            $factory,
+            new SchemaDiffer(),
+            new MigrationLoader(),
+            $repo,
+            new TableIgnoreMatcher(),
+            new ConsoleOutput(noAnsi: true),
+            new OperationDescriber(),
+        );
 
         ob_start();
         $code = $command->execute([], $config);
@@ -69,10 +80,11 @@ final class StatusCommandTest extends TestCase
 
         self::assertSame(0, $code);
         self::assertTrue($repo->ensured);
-        self::assertStringContainsString('Applied: 1', $out);
-        self::assertStringContainsString('Pending: 1', $out);
-        self::assertStringContainsString('Migration_20260110_000002', $out);
-        self::assertStringContainsString('Schema is in sync.', $out);
+        self::assertStringContainsString('Rowcast Schema -- status', $out);
+        self::assertStringContainsString('[OK] Migration_20260110_000001  applied', $out);
+        self::assertStringContainsString('[..] Migration_20260110_000002  pending', $out);
+        self::assertStringContainsString('Applied: 1 | Pending: 1', $out);
+        self::assertStringContainsString('Schema: in sync.', $out);
 
         @unlink($file1);
         @unlink($file2);

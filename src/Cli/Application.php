@@ -29,10 +29,11 @@ final class Application
     public function run(array $argv): int
     {
         [$globalOptions, $commandArgv] = $this->extractGlobalOptions($argv);
+        $output = new ConsoleOutput((bool)($globalOptions['no-ansi'] ?? false));
 
         $commandName = $commandArgv[1] ?? null;
         if (!\is_string($commandName) || $commandName === '') {
-            $this->printUsage();
+            $this->printUsage($output);
             return 1;
         }
 
@@ -49,51 +50,67 @@ final class Application
             $repository = new DatabaseMigrationRepository($config->pdo, $config->migrationTableName);
             $runner = new MigrationRunner($config->pdo, $loader, $repository, $platform);
             $tableIgnoreMatcher = new TableIgnoreMatcher($config->ignoreTableRules, $config->migrationTableName);
+            $operationDescriber = new OperationDescriber();
 
             $commands = [
-                'diff' => new DiffCommand($parser, $introspectorFactory, $differ, new MigrationGenerator(), $tableIgnoreMatcher),
-                'make' => new MakeCommand(new MigrationGenerator()),
-                'migrate' => new MigrateCommand($runner),
-                'rollback' => new RollbackCommand($runner),
-                'status' => new StatusCommand($parser, $introspectorFactory, $differ, $loader, $repository, $tableIgnoreMatcher),
+                'diff' => new DiffCommand(
+                    $parser,
+                    $introspectorFactory,
+                    $differ,
+                    new MigrationGenerator(),
+                    $tableIgnoreMatcher,
+                    $output,
+                    $operationDescriber,
+                ),
+                'make' => new MakeCommand(new MigrationGenerator(), $output),
+                'migrate' => new MigrateCommand($runner, $output),
+                'rollback' => new RollbackCommand($runner, $output),
+                'status' => new StatusCommand(
+                    $parser,
+                    $introspectorFactory,
+                    $differ,
+                    $loader,
+                    $repository,
+                    $tableIgnoreMatcher,
+                    $output,
+                    $operationDescriber,
+                ),
             ];
 
             $command = $commands[$commandName] ?? null;
             if (!$command instanceof CommandInterface) {
-                $this->printUsage();
+                $this->printUsage($output);
                 return 1;
             }
 
             return $command->execute(\array_slice($commandArgv, 2), $config);
         } catch (\Throwable $e) {
-            fwrite(STDERR, '[rowcast-schema] ' . $e->getMessage() . PHP_EOL);
+            $output->error($e->getMessage());
             return 1;
         }
     }
 
-    private function printUsage(): void
+    private function printUsage(ConsoleOutput $output): void
     {
-        echo <<<TXT
-            Rowcast Schema CLI
-
-            Usage:
-              rowcast-schema [--config=path] diff [--dry-run]
-              rowcast-schema [--config=path] make
-              rowcast-schema [--config=path] migrate
-              rowcast-schema [--config=path] rollback [--step=N]
-              rowcast-schema [--config=path] status
-
-            TXT;
+        $output->title('cli');
+        $output->newLine();
+        $output->line('Usage:', 2);
+        $output->line('rowcast-schema [--config=path] [--no-ansi] diff [--dry-run]', 4);
+        $output->line('rowcast-schema [--config=path] [--no-ansi] make', 4);
+        $output->line('rowcast-schema [--config=path] [--no-ansi] migrate', 4);
+        $output->line('rowcast-schema [--config=path] [--no-ansi] rollback [--step=N]', 4);
+        $output->line('rowcast-schema [--config=path] [--no-ansi] status', 4);
     }
 
     /**
      * @param list<string> $argv
      *
-     * @return array{0: array{config?: string}, 1: list<string>}
+     * @return array{0: array{config?: string, no-ansi?: bool}, 1: list<string>}
      */
     private function extractGlobalOptions(array $argv): array
     {
         $configPath = null;
+        $noAnsi = false;
         $filtered = [];
         $count = \count($argv);
 
@@ -119,12 +136,20 @@ final class Application
                 continue;
             }
 
+            if ($arg === '--no-ansi') {
+                $noAnsi = true;
+                continue;
+            }
+
             $filtered[] = $arg;
         }
 
         $options = [];
         if ($configPath !== null) {
             $options['config'] = $configPath;
+        }
+        if ($noAnsi) {
+            $options['no-ansi'] = true;
         }
 
         return [$options, $filtered];

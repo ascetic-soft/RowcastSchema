@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace AsceticSoft\RowcastSchema\Cli\Command;
 
+use AsceticSoft\RowcastSchema\Cli\ConsoleOutput;
 use AsceticSoft\RowcastSchema\Cli\Config;
+use AsceticSoft\RowcastSchema\Cli\OperationDescriber;
 use AsceticSoft\RowcastSchema\Cli\TableIgnoreMatcher;
 use AsceticSoft\RowcastSchema\Diff\SchemaDiffer;
 use AsceticSoft\RowcastSchema\Introspector\IntrospectorFactory;
@@ -21,11 +23,16 @@ final readonly class StatusCommand implements CommandInterface
         private MigrationLoader $loader,
         private MigrationRepositoryInterface $repository,
         private TableIgnoreMatcher $tableIgnoreMatcher,
+        private ConsoleOutput $output,
+        private OperationDescriber $operationDescriber,
     ) {
     }
 
     public function execute(array $args, Config $config): int
     {
+        $this->output->title('status');
+        $this->output->newLine();
+
         $this->repository->ensureTable();
 
         $all = array_keys($this->loader->load($config->migrationsPath));
@@ -33,15 +40,24 @@ final readonly class StatusCommand implements CommandInterface
         $appliedMap = array_flip($applied);
         $pending = array_values(array_filter($all, static fn (string $v): bool => !isset($appliedMap[$v])));
 
-        echo \sprintf("Applied: %d\n", \count($applied));
-        echo \sprintf("Pending: %d\n", \count($pending));
+        $this->output->line('Migrations:', 2);
+        $this->output->newLine();
+        if ($all === []) {
+            $this->output->line('(no migration files found)', 4);
+        } else {
+            foreach ($all as $version) {
+                if (isset($appliedMap[$version])) {
+                    $this->output->line(\sprintf('[OK] %s  applied', $version), 4);
+                    continue;
+                }
 
-        if ($pending !== []) {
-            echo "Pending migrations:\n";
-            foreach ($pending as $version) {
-                echo " - {$version}\n";
+                $this->output->line(\sprintf('[..] %s  pending', $version), 4);
             }
         }
+
+        $this->output->newLine();
+        $this->output->info(\sprintf('Applied: %d | Pending: %d', \count($applied), \count($pending)));
+        $this->output->newLine();
 
         $target = $this->tableIgnoreMatcher->filterSchema($this->parser->parse($config->schemaPath));
         $current = $this->tableIgnoreMatcher->filterSchema(
@@ -50,9 +66,19 @@ final readonly class StatusCommand implements CommandInterface
         $diff = $this->differ->diff($current, $target);
 
         if ($diff === []) {
-            echo "Schema is in sync.\n";
+            $this->output->success('Schema: in sync.');
         } else {
-            echo \sprintf("Schema diff operations: %d\n", \count($diff));
+            $this->output->warning(\sprintf(
+                'Schema: %d %s detected.',
+                \count($diff),
+                \count($diff) === 1 ? 'operation' : 'operations',
+            ));
+            $this->output->newLine();
+            foreach ($diff as $operation) {
+                $this->output->line($this->operationDescriber->describe($operation), 4);
+            }
+            $this->output->newLine();
+            $this->output->info('Summary: ' . $this->operationDescriber->describeSummary($diff));
         }
 
         return 0;

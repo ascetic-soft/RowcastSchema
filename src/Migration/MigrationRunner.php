@@ -18,7 +18,7 @@ final readonly class MigrationRunner
     ) {
     }
 
-    public function migrate(string $migrationsPath): int
+    public function migrate(string $migrationsPath, ?\Closure $onVersion = null): int
     {
         $this->repository->ensureTable();
 
@@ -33,13 +33,14 @@ final readonly class MigrationRunner
 
             $this->runUpMigration($version, $filePath);
             $this->repository->markApplied($version);
+            $onVersion?->__invoke($version);
             $count++;
         }
 
         return $count;
     }
 
-    public function rollback(string $migrationsPath, int $step = 1): int
+    public function rollback(string $migrationsPath, int $step = 1, ?\Closure $onVersion = null): int
     {
         $this->repository->ensureTable();
 
@@ -56,6 +57,7 @@ final readonly class MigrationRunner
 
             $this->runDownMigration($version, $filePath);
             $this->repository->markRolledBack($version);
+            $onVersion?->__invoke($version);
             $count++;
         }
 

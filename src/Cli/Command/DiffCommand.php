@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace AsceticSoft\RowcastSchema\Cli\Command;
 
+use AsceticSoft\RowcastSchema\Cli\ConsoleOutput;
 use AsceticSoft\RowcastSchema\Cli\Config;
+use AsceticSoft\RowcastSchema\Cli\OperationDescriber;
 use AsceticSoft\RowcastSchema\Cli\TableIgnoreMatcher;
 use AsceticSoft\RowcastSchema\Diff\SchemaDiffer;
 use AsceticSoft\RowcastSchema\Introspector\IntrospectorFactory;
@@ -19,34 +21,61 @@ final readonly class DiffCommand implements CommandInterface
         private SchemaDiffer $differ,
         private MigrationGenerator $generator,
         private TableIgnoreMatcher $tableIgnoreMatcher,
+        private ConsoleOutput $output,
+        private OperationDescriber $operationDescriber,
     ) {
     }
 
     public function execute(array $args, Config $config): int
     {
+        $isDryRun = \in_array('--dry-run', $args, true);
+
+        $this->output->title($isDryRun ? 'diff (dry-run)' : 'diff');
+        $this->output->newLine();
+
         $target = $this->tableIgnoreMatcher->filterSchema($this->parser->parse($config->schemaPath));
         $introspector = $this->introspectorFactory->createForPdo($config->pdo);
         $current = $this->tableIgnoreMatcher->filterSchema($introspector->introspect($config->pdo));
         $operations = $this->differ->diff($current, $target);
 
-        if (\in_array('--dry-run', $args, true)) {
-            if ($operations === []) {
-                echo "No schema changes detected.\n";
-                return 0;
+        if ($operations === []) {
+            if ($isDryRun) {
+                $this->output->success('No schema changes detected.');
+            } else {
+                $this->output->success('No schema changes detected. Migration file was not created.');
             }
-            foreach ($operations as $op) {
-                echo $op::class . PHP_EOL;
-            }
+
             return 0;
         }
 
-        if ($operations === []) {
-            echo "No schema changes detected. Migration file was not created.\n";
+        $this->output->info(\sprintf(
+            'Detected %d %s:',
+            \count($operations),
+            \count($operations) === 1 ? 'operation' : 'operations',
+        ));
+        $this->output->newLine();
+
+        foreach ($operations as $operation) {
+            $this->output->line($this->operationDescriber->describe($operation), 4);
+            if ($isDryRun) {
+                foreach ($this->operationDescriber->describeDetails($operation) as $detailLine) {
+                    $this->output->line($detailLine, 8);
+                }
+            }
+        }
+
+        $this->output->newLine();
+        $this->output->info('Summary: ' . $this->operationDescriber->describeSummary($operations));
+
+        if ($isDryRun) {
             return 0;
         }
 
         $file = $this->generator->generate($operations, $config->migrationsPath);
-        echo \sprintf("Migration generated: %s\n", $file);
+        $this->output->newLine();
+        $this->output->success(\sprintf('Migration generated: %s', pathinfo($file, PATHINFO_FILENAME)));
+        $this->output->line($file, 4);
+
         return 0;
     }
 }

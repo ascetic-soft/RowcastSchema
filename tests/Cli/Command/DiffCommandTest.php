@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace AsceticSoft\RowcastSchema\Tests\Cli\Command;
 
 use AsceticSoft\RowcastSchema\Cli\Command\DiffCommand;
+use AsceticSoft\RowcastSchema\Cli\ConsoleOutput;
 use AsceticSoft\RowcastSchema\Cli\Config;
+use AsceticSoft\RowcastSchema\Cli\OperationDescriber;
 use AsceticSoft\RowcastSchema\Cli\TableIgnoreMatcher;
 use AsceticSoft\RowcastSchema\Diff\SchemaDiffer;
 use AsceticSoft\RowcastSchema\Introspector\IntrospectorFactory;
@@ -39,13 +41,22 @@ final class DiffCommandTest extends TestCase
             },
         ]);
 
-        $command = new DiffCommand($parser, $factory, new SchemaDiffer(), new MigrationGenerator(), new TableIgnoreMatcher());
+        $command = new DiffCommand(
+            $parser,
+            $factory,
+            new SchemaDiffer(),
+            new MigrationGenerator(),
+            new TableIgnoreMatcher(),
+            new ConsoleOutput(noAnsi: true),
+            new OperationDescriber(),
+        );
 
         ob_start();
         $code = $command->execute(['--dry-run'], $config);
         $out = (string) ob_get_clean();
 
         self::assertSame(0, $code);
+        self::assertStringContainsString('Rowcast Schema -- diff (dry-run)', $out);
         self::assertStringContainsString('No schema changes detected.', $out);
     }
 
@@ -73,13 +84,23 @@ final class DiffCommandTest extends TestCase
             },
         ]);
 
-        $command = new DiffCommand($parser, $factory, new SchemaDiffer(), new MigrationGenerator(), new TableIgnoreMatcher());
+        $command = new DiffCommand(
+            $parser,
+            $factory,
+            new SchemaDiffer(),
+            new MigrationGenerator(),
+            new TableIgnoreMatcher(),
+            new ConsoleOutput(noAnsi: true),
+            new OperationDescriber(),
+        );
 
         ob_start();
         $code = $command->execute([], $config);
         $out = (string) ob_get_clean();
 
         self::assertSame(0, $code);
+        self::assertStringContainsString('Rowcast Schema -- diff', $out);
+        self::assertStringContainsString('Detected 1 operation:', $out);
         self::assertStringContainsString('Migration generated:', $out);
 
         $files = glob($dir . '/Migration_*.php');

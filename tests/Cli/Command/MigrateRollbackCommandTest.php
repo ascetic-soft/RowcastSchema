@@ -6,6 +6,7 @@ namespace AsceticSoft\RowcastSchema\Tests\Cli\Command;
 
 use AsceticSoft\RowcastSchema\Cli\Command\MigrateCommand;
 use AsceticSoft\RowcastSchema\Cli\Command\RollbackCommand;
+use AsceticSoft\RowcastSchema\Cli\ConsoleOutput;
 use AsceticSoft\RowcastSchema\Cli\Config;
 use AsceticSoft\RowcastSchema\Migration\DatabaseMigrationRepository;
 use AsceticSoft\RowcastSchema\Migration\MigrationLoader;
@@ -30,11 +31,12 @@ final class MigrateRollbackCommandTest extends TestCase
         $config = new Config('schema.php', $dir, '_rowcast_migrations', $pdo);
 
         ob_start();
-        $code = new MigrateCommand($runner)->execute([], $config);
+        $code = new MigrateCommand($runner, new ConsoleOutput(noAnsi: true))->execute([], $config);
         $out = (string) ob_get_clean();
 
         self::assertSame(0, $code);
-        self::assertStringContainsString('Applied migrations: 0', $out);
+        self::assertStringContainsString('Rowcast Schema -- migrate', $out);
+        self::assertStringContainsString('Nothing to migrate.', $out);
 
         @rmdir($dir);
     }
@@ -53,11 +55,12 @@ final class MigrateRollbackCommandTest extends TestCase
         $config = new Config('schema.php', $dir, '_rowcast_migrations', $pdo);
 
         ob_start();
-        $code = new RollbackCommand($runner)->execute(['--step=3'], $config);
+        $code = new RollbackCommand($runner, new ConsoleOutput(noAnsi: true))->execute(['--step=3'], $config);
         $out = (string) ob_get_clean();
 
         self::assertSame(0, $code);
-        self::assertStringContainsString('Rolled back migrations: 0', $out);
+        self::assertStringContainsString('Rowcast Schema -- rollback (step: 3)', $out);
+        self::assertStringContainsString('Nothing to rollback.', $out);
 
         @rmdir($dir);
     }
