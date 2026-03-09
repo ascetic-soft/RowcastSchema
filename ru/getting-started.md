@@ -55,6 +55,12 @@ return [
     ],
     'schema' => __DIR__ . '/schema.php',
     'migrations' => __DIR__ . '/migrations',
+    'migration_table' => '_rowcast_migrations',
+    'ignore_tables' => [
+        '/^tmp_/',
+        '/^audit_/',
+        static fn (string $table): bool => str_ends_with($table, '_shadow'),
+    ],
 ];
 ```
 
@@ -68,6 +74,9 @@ vendor/bin/rowcast-schema --config=database/rowcast-schema.php diff
 
 - массив (классический режим),
 - или фабрику `static function (string $projectDir): array` (удобно для env из корня проекта).
+
+`migration_table` задает таблицу для хранения примененных версий и автоматически исключается из diff схемы.
+`ignore_tables` используйте для своих правил исключения (regex-строки и/или callback).
 
 | Ключ | Описание |
 |:-----|:---------|

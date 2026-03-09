@@ -22,7 +22,11 @@ parent: Русский
 
 ## Форматы схемы
 
-Rowcast Schema поддерживает два формата. Парсер выбирается автоматически по расширению файла.
+Rowcast Schema поддерживает три формата. Парсер выбирается автоматически по пути в `schema`:
+
+- путь к директории -> парсер атрибутов
+- файл `.php` -> PHP-парсер
+- файл `.yaml` / `.yml` -> YAML-парсер
 
 ### PHP-формат (по умолчанию, без зависимостей)
 
@@ -66,6 +70,36 @@ tables:
 {: .note }
 YAML-поддержка опциональна. Установите `composer require symfony/yaml`. Если пакет отсутствует и указан `.yaml`-файл, парсер выбросит понятную ошибку с инструкцией по установке.
 
+### Формат с атрибутами (директория с PHP-классами)
+
+```php
+// rowcast-schema.php
+return [
+    'connection' => [
+        'dsn' => 'mysql:host=localhost;dbname=app',
+        'username' => 'root',
+        'password' => 'secret',
+    ],
+    'schema' => __DIR__ . '/src/Entity',
+    'migrations' => __DIR__ . '/migrations',
+];
+```
+
+```php
+use AsceticSoft\RowcastSchema\Attribute\Column;
+use AsceticSoft\RowcastSchema\Attribute\Table;
+
+#[Table]
+final class User
+{
+    #[Column(primaryKey: true, autoIncrement: true)]
+    public int $id;
+
+    #[Column(length: 255)]
+    public string $email;
+}
+```
+
 ---
 
 ## Поддерживаемые абстрактные типы
@@ -85,10 +119,26 @@ YAML-поддержка опциональна. Установите `composer r
 | `date` | DATE |
 | `time` | TIME |
 | `timestamp` | TIMESTAMP |
+| `timestamptz` | TIMESTAMPTZ |
 | `uuid` | CHAR(36) / UUID |
 | `json` | JSON / TEXT |
 | `binary` | BLOB / BYTEA |
 | `enum` | ENUM (требует `values`) |
+
+---
+
+## Кастомные типы БД
+
+Можно передавать vendor-specific типы как строку в `type`:
+
+```php
+'columns' => [
+    'embedding' => ['type' => 'vector(1536)', 'nullable' => true],
+    'title_ci' => ['type' => 'citext'],
+],
+```
+
+Неизвестные типы сохраняются как custom `databaseType` и попадают в SQL без изменений. Это работает для pgvector, citext, PostGIS и других специфичных типов.
 
 ---
 

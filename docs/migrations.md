@@ -130,6 +130,17 @@ $schema->createTable('products', function (TableBuilder $table) {
 - known abstract type strings (`'string'`, `'integer'`, ...),
 - custom raw database types (`'jsonb'`, `'citext'`, `'numeric(20,6)'`, ...).
 
+### Raw SQL
+
+When needed, execute arbitrary SQL in migration methods:
+
+```php
+public function up(SchemaBuilder $schema): void
+{
+    $schema->sql("UPDATE users SET status = 'active' WHERE status IS NULL");
+}
+```
+
 ### Column modifiers
 
 All return `ColumnBuilder` (fluent):

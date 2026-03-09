@@ -56,6 +56,12 @@ return [
     ],
     'schema' => __DIR__ . '/schema.php',
     'migrations' => __DIR__ . '/migrations',
+    'migration_table' => '_rowcast_migrations',
+    'ignore_tables' => [
+        '/^tmp_/',
+        '/^audit_/',
+        static fn (string $table): bool => str_ends_with($table, '_shadow'),
+    ],
 ];
 ```
 
@@ -69,6 +75,9 @@ The config file may return:
 
 - an array (classic mode),
 - or a factory closure `static function (string $projectDir): array` (useful for resolving environment variables from project root).
+
+`migration_table` defines where applied versions are stored and is always ignored in schema diff.
+Use `ignore_tables` for custom ignore rules (regex strings and/or callbacks).
 
 | Key | Description |
 |:----|:-----------|

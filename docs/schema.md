@@ -21,7 +21,11 @@ Define your database structure in PHP or YAML.
 
 ## Schema Formats
 
-Rowcast Schema supports two formats. The parser is chosen automatically by the file extension configured in `rowcast-schema.php`.
+Rowcast Schema supports three formats. The parser is chosen automatically by the configured `schema` path:
+
+- directory path -> attribute parser
+- `.php` file -> PHP parser
+- `.yaml` / `.yml` file -> YAML parser
 
 ### PHP format (default, no extra dependencies)
 
@@ -65,6 +69,36 @@ tables:
 {: .note }
 YAML support is optional. Install it with `composer require symfony/yaml`. If the package is missing and you point to a `.yaml` file, the parser throws a clear error with installation instructions.
 
+### Attribute format (directory of PHP classes)
+
+```php
+// rowcast-schema.php
+return [
+    'connection' => [
+        'dsn' => 'mysql:host=localhost;dbname=app',
+        'username' => 'root',
+        'password' => 'secret',
+    ],
+    'schema' => __DIR__ . '/src/Entity',
+    'migrations' => __DIR__ . '/migrations',
+];
+```
+
+```php
+use AsceticSoft\RowcastSchema\Attribute\Column;
+use AsceticSoft\RowcastSchema\Attribute\Table;
+
+#[Table]
+final class User
+{
+    #[Column(primaryKey: true, autoIncrement: true)]
+    public int $id;
+
+    #[Column(length: 255)]
+    public string $email;
+}
+```
+
 ---
 
 ## Supported Abstract Types
@@ -84,10 +118,26 @@ YAML support is optional. Install it with `composer require symfony/yaml`. If th
 | `date` | DATE |
 | `time` | TIME |
 | `timestamp` | TIMESTAMP |
+| `timestamptz` | TIMESTAMPTZ |
 | `uuid` | CHAR(36) / UUID |
 | `json` | JSON / TEXT |
 | `binary` | BLOB / BYTEA |
 | `enum` | ENUM (requires `values`) |
+
+---
+
+## Custom Database Types
+
+You can pass vendor-specific database types as raw strings in `type`:
+
+```php
+'columns' => [
+    'embedding' => ['type' => 'vector(1536)', 'nullable' => true],
+    'title_ci' => ['type' => 'citext'],
+],
+```
+
+Unknown type strings are preserved as custom `databaseType` and emitted to SQL as-is. This works for extension types such as pgvector, citext, PostGIS, and other database-specific types.
 
 ---
 
