@@ -152,11 +152,15 @@ final class MigrationGenerator
             \sprintf("\$schema->createTable('%s', function (TableBuilder \$table): void {", $operation->table->name),
         ];
 
+        $autoPrimary = [];
         foreach ($operation->table->columns as $column) {
             $lines[] = '    ' . $this->columnBuilderLine($column);
+            if ($column->primaryKey) {
+                $autoPrimary[] = $column->name;
+            }
         }
 
-        if ($operation->table->primaryKey !== []) {
+        if ($operation->table->primaryKey !== [] && $operation->table->primaryKey !== $autoPrimary) {
             $lines[] = \sprintf('    $table->primaryKey(%s);', $this->exportValue($operation->table->primaryKey));
         }
 

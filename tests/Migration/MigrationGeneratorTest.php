@@ -96,11 +96,33 @@ final class MigrationGeneratorTest extends TestCase
         $content = $this->generateAndRead([new CreateTable($table)]);
 
         self::assertStringContainsString("\$schema->createTable('users', function (TableBuilder \$table): void {", $content);
+        self::assertStringContainsString("\$table->column('id', ColumnType::Integer)->primaryKey()->autoIncrement();", $content);
+        self::assertStringNotContainsString("\$table->primaryKey(['id']);", $content);
         self::assertStringContainsString("\$table->column('email', ColumnType::String)->length(255);", $content);
         self::assertStringContainsString("\$table->column('amount', ColumnType::Decimal)->precision(12, 4);", $content);
         self::assertStringContainsString("\$table->index('idx_users_email', ['email'], true);", $content);
         self::assertStringContainsString("\$table->foreignKey('fk_users_org', ['id'], 'organizations', ['id'], 'cascade', 'restrict');", $content);
         self::assertStringContainsString("\$schema->dropTable('users');", $content);
+    }
+
+    public function testGeneratesExplicitTablePrimaryKeyWhenDifferentFromColumnFlags(): void
+    {
+        $table = new Table(
+            name: 'events',
+            columns: [
+                'tenant_id' => new Column('tenant_id', ColumnType::Uuid),
+                'event_id' => new Column('event_id', ColumnType::Uuid),
+                'payload' => new Column('payload', ColumnType::Json),
+            ],
+            primaryKey: ['tenant_id', 'event_id'],
+        );
+
+        $content = $this->generateAndRead([new CreateTable($table)]);
+
+        self::assertStringContainsString(
+            "\$table->primaryKey(['tenant_id', 'event_id']);",
+            $content,
+        );
     }
 
     public function testGeneratesForwardAndReverseForDropOperationsWithTodoComments(): void
