@@ -79,12 +79,12 @@ final class AttributeSchemaBuilderTest extends TestCase
 
         $gigachat = $categories->getColumn('gigachat_embedding');
         self::assertNotNull($gigachat);
-        self::assertSame(ColumnType::String, $gigachat->type);
+        self::assertSame(ColumnType::Text, $gigachat->type);
         self::assertSame('vector(1024)', $gigachat->databaseType);
 
         $openai = $categories->getColumn('openai_embedding');
         self::assertNotNull($openai);
-        self::assertSame(ColumnType::String, $openai->type);
+        self::assertSame(ColumnType::Text, $openai->type);
         self::assertSame('vector(1536)', $openai->databaseType);
     }
 }

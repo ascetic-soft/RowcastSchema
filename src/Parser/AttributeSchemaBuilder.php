@@ -76,6 +76,9 @@ final readonly class AttributeSchemaBuilder
                 [$type, $databaseType, $enumValues] = $this->resolveColumnType($columnAttribute, $property, $className);
                 $nullable = $columnAttribute->nullable ?? $this->inferNullableFromProperty($property);
                 $resolvedDatabaseType = $columnAttribute->databaseType ?? $databaseType;
+                if ($resolvedDatabaseType !== null) {
+                    $type = ColumnType::Text;
+                }
                 $length = $columnAttribute->length;
                 if ($resolvedDatabaseType === null && $type === ColumnType::String && $length === null) {
                     $length = 255;
