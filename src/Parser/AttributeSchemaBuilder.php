@@ -75,6 +75,11 @@ final readonly class AttributeSchemaBuilder
 
                 [$type, $databaseType, $enumValues] = $this->resolveColumnType($columnAttribute, $property, $className);
                 $nullable = $columnAttribute->nullable ?? $this->inferNullableFromProperty($property);
+                $resolvedDatabaseType = $columnAttribute->databaseType ?? $databaseType;
+                $length = $columnAttribute->length;
+                if ($resolvedDatabaseType === null && $type === ColumnType::String && $length === null) {
+                    $length = 255;
+                }
 
                 $column = new Column(
                     name: $columnName,
@@ -83,13 +88,13 @@ final readonly class AttributeSchemaBuilder
                     default: $this->resolveColumnDefault($columnAttribute, $property),
                     primaryKey: $columnAttribute->primaryKey,
                     autoIncrement: $columnAttribute->autoIncrement,
-                    length: $columnAttribute->length,
+                    length: $length,
                     precision: $columnAttribute->precision,
                     scale: $columnAttribute->scale,
                     unsigned: $columnAttribute->unsigned,
                     comment: $columnAttribute->comment,
                     enumValues: $enumValues,
-                    databaseType: $columnAttribute->databaseType ?? $databaseType,
+                    databaseType: $resolvedDatabaseType,
                 );
                 $columns[$columnName] = $column;
 
