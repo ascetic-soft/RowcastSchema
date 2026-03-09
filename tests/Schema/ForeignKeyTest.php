@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AsceticSoft\RowcastSchema\Tests\Schema;
 
 use AsceticSoft\RowcastSchema\Schema\ForeignKey;
+use AsceticSoft\RowcastSchema\Schema\ReferentialAction;
 use PHPUnit\Framework\TestCase;
 
 final class ForeignKeyTest extends TestCase
@@ -16,13 +17,13 @@ final class ForeignKeyTest extends TestCase
             columns: ['user_id'],
             referenceTable: 'users',
             referenceColumns: ['id'],
-            onDelete: 'CASCADE',
+            onDelete: ReferentialAction::Cascade,
         );
 
         self::assertSame('fk_posts_user_id', $foreignKey->name);
         self::assertSame(['user_id'], $foreignKey->columns);
         self::assertSame(['id'], $foreignKey->referenceColumns);
-        self::assertSame('CASCADE', $foreignKey->onDelete);
+        self::assertSame(ReferentialAction::Cascade, $foreignKey->onDelete);
     }
 
     public function testThrowsWhenNameIsEmpty(): void

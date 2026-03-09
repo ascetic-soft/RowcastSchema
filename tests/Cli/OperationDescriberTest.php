@@ -20,6 +20,7 @@ use AsceticSoft\RowcastSchema\Schema\Column;
 use AsceticSoft\RowcastSchema\Schema\ColumnType;
 use AsceticSoft\RowcastSchema\Schema\ForeignKey;
 use AsceticSoft\RowcastSchema\Schema\Index;
+use AsceticSoft\RowcastSchema\Schema\ReferentialAction;
 use AsceticSoft\RowcastSchema\Schema\Table;
 use PHPUnit\Framework\TestCase;
 
@@ -126,7 +127,14 @@ final class OperationDescriberTest extends TestCase
             ['columns: (user_id), references: users(id), onDelete=CASCADE, onUpdate=RESTRICT'],
             $describer->describeDetails(new AddForeignKey(
                 'events',
-                new ForeignKey('fk_events_user', ['user_id'], 'users', ['id'], onDelete: 'CASCADE', onUpdate: 'RESTRICT'),
+                new ForeignKey(
+                    'fk_events_user',
+                    ['user_id'],
+                    'users',
+                    ['id'],
+                    onDelete: ReferentialAction::Cascade,
+                    onUpdate: ReferentialAction::Restrict,
+                ),
             )),
         );
         self::assertSame(

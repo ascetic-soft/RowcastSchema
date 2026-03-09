@@ -7,6 +7,7 @@ namespace AsceticSoft\RowcastSchema\SchemaBuilder;
 use AsceticSoft\RowcastSchema\Schema\ColumnType;
 use AsceticSoft\RowcastSchema\Schema\ForeignKey;
 use AsceticSoft\RowcastSchema\Schema\Index;
+use AsceticSoft\RowcastSchema\Schema\ReferentialAction;
 use AsceticSoft\RowcastSchema\Schema\Table;
 
 final class TableBuilder
@@ -62,8 +63,8 @@ final class TableBuilder
         array $columns,
         string $referenceTable,
         array $referenceColumns,
-        ?string $onDelete = null,
-        ?string $onUpdate = null,
+        ReferentialAction|string|null $onDelete = null,
+        ReferentialAction|string|null $onUpdate = null,
     ): self {
         $this->foreignKeys[$name] = new ForeignKey(
             $name,

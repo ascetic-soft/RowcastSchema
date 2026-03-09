@@ -15,8 +15,8 @@ final readonly class ForeignKey
         public array $columns,
         public string $referenceTable,
         public array $referenceColumns,
-        public ?string $onDelete = null,
-        public ?string $onUpdate = null,
+        public ReferentialAction|string|null $onDelete = null,
+        public ReferentialAction|string|null $onUpdate = null,
     ) {
         if ($name === '') {
             throw new \InvalidArgumentException('Foreign key name cannot be empty.');

@@ -18,6 +18,7 @@ use AsceticSoft\RowcastSchema\Diff\Operation\RawSql;
 use AsceticSoft\RowcastSchema\Schema\Column;
 use AsceticSoft\RowcastSchema\Schema\ForeignKey;
 use AsceticSoft\RowcastSchema\Schema\Index;
+use AsceticSoft\RowcastSchema\Schema\ReferentialAction;
 use AsceticSoft\RowcastSchema\Schema\Table;
 use AsceticSoft\RowcastSchema\TypeMapper\TypeMapperInterface;
 
@@ -139,10 +140,10 @@ abstract readonly class AbstractPlatform implements PlatformInterface
         );
 
         if ($foreignKey->onDelete !== null) {
-            $sql .= ' ON DELETE ' . strtoupper($foreignKey->onDelete);
+            $sql .= ' ON DELETE ' . ReferentialAction::toSql($foreignKey->onDelete);
         }
         if ($foreignKey->onUpdate !== null) {
-            $sql .= ' ON UPDATE ' . strtoupper($foreignKey->onUpdate);
+            $sql .= ' ON UPDATE ' . ReferentialAction::toSql($foreignKey->onUpdate);
         }
 
         return $sql;

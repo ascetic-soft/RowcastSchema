@@ -11,6 +11,7 @@ use AsceticSoft\RowcastSchema\Diff\Operation\DropForeignKey;
 use AsceticSoft\RowcastSchema\Diff\Operation\OperationInterface;
 use AsceticSoft\RowcastSchema\Schema\Column;
 use AsceticSoft\RowcastSchema\Schema\ForeignKey;
+use AsceticSoft\RowcastSchema\Schema\ReferentialAction;
 use AsceticSoft\RowcastSchema\TypeMapper\SqliteTypeMapper;
 
 final readonly class SqliteTableRebuilder
@@ -126,8 +127,8 @@ final readonly class SqliteTableRebuilder
      *      columns: list<string>,
      *      referenceTable: string,
      *      referenceColumns: list<string>,
-     *      onDelete: ?string,
-     *      onUpdate: ?string
+     *      onDelete: ReferentialAction|string|null,
+     *      onUpdate: ReferentialAction|string|null
      *   }>,
      *   indexes: list<array{name: string, unique: bool, columns: list<string>}>
      * }
@@ -165,8 +166,12 @@ final readonly class SqliteTableRebuilder
                     'columns' => [],
                     'referenceTable' => (string)$fkRow['table'],
                     'referenceColumns' => [],
-                    'onDelete' => (string)$fkRow['on_delete'] !== 'NO ACTION' ? (string)$fkRow['on_delete'] : null,
-                    'onUpdate' => (string)$fkRow['on_update'] !== 'NO ACTION' ? (string)$fkRow['on_update'] : null,
+                    'onDelete' => (string)$fkRow['on_delete'] !== 'NO ACTION'
+                        ? ReferentialAction::tryFromString((string)$fkRow['on_delete'])
+                        : null,
+                    'onUpdate' => (string)$fkRow['on_update'] !== 'NO ACTION'
+                        ? ReferentialAction::tryFromString((string)$fkRow['on_update'])
+                        : null,
                 ];
             }
             $fkGroups[$id]['columns'][] = (string)$fkRow['from'];
@@ -209,7 +214,7 @@ final readonly class SqliteTableRebuilder
 
     /**
      * @param array<string, array{name: string, type: string, notnull: bool, default: mixed, pk: int}> $columns
-     * @param list<array{name: string, columns: list<string>, referenceTable: string, referenceColumns: list<string>, onDelete: ?string, onUpdate: ?string}> $foreignKeys
+     * @param list<array{name: string, columns: list<string>, referenceTable: string, referenceColumns: list<string>, onDelete: ReferentialAction|string|null, onUpdate: ReferentialAction|string|null}> $foreignKeys
      * @param list<array{name: string, unique: bool, columns: list<string>}> $indexes
      * @param list<string> $oldColumnOrder
      */
@@ -260,10 +265,10 @@ final readonly class SqliteTableRebuilder
                 $refCols,
             );
             if ($fk['onDelete'] !== null) {
-                $fkSql .= ' ON DELETE ' . strtoupper($fk['onDelete']);
+                $fkSql .= ' ON DELETE ' . ReferentialAction::toSql($fk['onDelete']);
             }
             if ($fk['onUpdate'] !== null) {
-                $fkSql .= ' ON UPDATE ' . strtoupper($fk['onUpdate']);
+                $fkSql .= ' ON UPDATE ' . ReferentialAction::toSql($fk['onUpdate']);
             }
             $parts[] = $fkSql;
         }
@@ -320,7 +325,7 @@ final readonly class SqliteTableRebuilder
     }
 
     /**
-     * @return array{name: string, columns: list<string>, referenceTable: string, referenceColumns: list<string>, onDelete: ?string, onUpdate: ?string}
+     * @return array{name: string, columns: list<string>, referenceTable: string, referenceColumns: list<string>, onDelete: ReferentialAction|string|null, onUpdate: ReferentialAction|string|null}
      */
     private function foreignKeyToArray(ForeignKey $foreignKey): array
     {

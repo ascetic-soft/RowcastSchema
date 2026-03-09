@@ -8,6 +8,7 @@ use AsceticSoft\RowcastSchema\Schema\Column;
 use AsceticSoft\RowcastSchema\Schema\ColumnType;
 use AsceticSoft\RowcastSchema\Schema\ForeignKey;
 use AsceticSoft\RowcastSchema\Schema\Index;
+use AsceticSoft\RowcastSchema\Schema\ReferentialAction;
 use AsceticSoft\RowcastSchema\Schema\Schema;
 use AsceticSoft\RowcastSchema\Schema\Table;
 
@@ -109,8 +110,8 @@ final class ArraySchemaBuilder
                 columns: $columnsFk,
                 referenceTable: $referenceTable,
                 referenceColumns: $referenceColumns,
-                onDelete: isset($fkMap['onDelete']) ? $this->toString($fkMap['onDelete'], 'Foreign key onDelete must be string.') : null,
-                onUpdate: isset($fkMap['onUpdate']) ? $this->toString($fkMap['onUpdate'], 'Foreign key onUpdate must be string.') : null,
+                onDelete: isset($fkMap['onDelete']) ? ReferentialAction::tryFromString($this->toString($fkMap['onDelete'], 'Foreign key onDelete must be string.')) : null,
+                onUpdate: isset($fkMap['onUpdate']) ? ReferentialAction::tryFromString($this->toString($fkMap['onUpdate'], 'Foreign key onUpdate must be string.')) : null,
             );
         }
 

@@ -6,6 +6,7 @@ namespace AsceticSoft\RowcastSchema\Tests\Fixtures\EntityValid;
 
 use AsceticSoft\RowcastSchema\Attribute\Column;
 use AsceticSoft\RowcastSchema\Attribute\ForeignKey;
+use AsceticSoft\RowcastSchema\Schema\ReferentialAction;
 use AsceticSoft\RowcastSchema\Attribute\Table;
 
 #[Table('blog_posts')]
@@ -15,6 +16,6 @@ final class Post
     public int $id;
 
     #[Column]
-    #[ForeignKey('fk_posts_user', referenceTable: 'users', referenceColumns: ['id'], onDelete: 'CASCADE')]
+    #[ForeignKey('fk_posts_user', referenceTable: 'users', referenceColumns: ['id'], onDelete: ReferentialAction::Cascade)]
     public int $userId;
 }

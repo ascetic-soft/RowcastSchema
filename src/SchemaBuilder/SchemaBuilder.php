@@ -18,6 +18,7 @@ use AsceticSoft\RowcastSchema\Diff\Operation\RawSql;
 use AsceticSoft\RowcastSchema\Schema\Column;
 use AsceticSoft\RowcastSchema\Schema\ForeignKey;
 use AsceticSoft\RowcastSchema\Schema\Index;
+use AsceticSoft\RowcastSchema\Schema\ReferentialAction;
 
 final class SchemaBuilder
 {
@@ -81,8 +82,8 @@ final class SchemaBuilder
         array $columns,
         string $referenceTable,
         array $referenceColumns,
-        ?string $onDelete = null,
-        ?string $onUpdate = null,
+        ReferentialAction|string|null $onDelete = null,
+        ReferentialAction|string|null $onUpdate = null,
     ): self {
         $this->operations[] = new AddForeignKey(
             $table,

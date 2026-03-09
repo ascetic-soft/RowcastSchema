@@ -8,6 +8,7 @@ use AsceticSoft\RowcastSchema\Schema\Column;
 use AsceticSoft\RowcastSchema\Schema\ColumnType;
 use AsceticSoft\RowcastSchema\Schema\ForeignKey;
 use AsceticSoft\RowcastSchema\Schema\Index;
+use AsceticSoft\RowcastSchema\Schema\ReferentialAction;
 use AsceticSoft\RowcastSchema\Schema\Schema;
 use AsceticSoft\RowcastSchema\Schema\Table;
 use AsceticSoft\RowcastSchema\TypeMapper\TypeMapperInterface;
@@ -241,8 +242,8 @@ final readonly class PostgresIntrospector implements IntrospectorInterface
          *     columns: list<string>,
          *     reference_table: string,
          *     reference_columns: list<string>,
-         *     on_delete: ?string,
-         *     on_update: ?string
+         *     on_delete: ReferentialAction|string|null,
+         *     on_update: ReferentialAction|string|null
          * }>> $fks
          */
         $fks = [];
@@ -322,13 +323,13 @@ final readonly class PostgresIntrospector implements IntrospectorInterface
         };
     }
 
-    private function normalizeReferentialRule(mixed $rule): ?string
+    private function normalizeReferentialRule(mixed $rule): ReferentialAction|string|null
     {
         if (!\is_string($rule) || $rule === '' || $rule === 'NO ACTION') {
             return null;
         }
 
-        return $rule;
+        return ReferentialAction::tryFromString($rule);
     }
 
     private function toBool(mixed $value): bool

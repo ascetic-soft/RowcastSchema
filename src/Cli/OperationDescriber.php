@@ -16,6 +16,7 @@ use AsceticSoft\RowcastSchema\Diff\Operation\DropTable;
 use AsceticSoft\RowcastSchema\Diff\Operation\OperationInterface;
 use AsceticSoft\RowcastSchema\Diff\Operation\RawSql;
 use AsceticSoft\RowcastSchema\Schema\Column;
+use AsceticSoft\RowcastSchema\Schema\ReferentialAction;
 
 final class OperationDescriber
 {
@@ -191,10 +192,10 @@ final class OperationDescriber
         );
 
         if ($operation->foreignKey->onDelete !== null) {
-            $detail .= ', onDelete=' . $operation->foreignKey->onDelete;
+            $detail .= ', onDelete=' . ReferentialAction::toSql($operation->foreignKey->onDelete);
         }
         if ($operation->foreignKey->onUpdate !== null) {
-            $detail .= ', onUpdate=' . $operation->foreignKey->onUpdate;
+            $detail .= ', onUpdate=' . ReferentialAction::toSql($operation->foreignKey->onUpdate);
         }
 
         return $detail;

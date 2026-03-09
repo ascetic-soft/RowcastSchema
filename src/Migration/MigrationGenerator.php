@@ -16,6 +16,7 @@ use AsceticSoft\RowcastSchema\Diff\Operation\DropTable;
 use AsceticSoft\RowcastSchema\Diff\Operation\OperationInterface;
 use AsceticSoft\RowcastSchema\Schema\Column;
 use AsceticSoft\RowcastSchema\Schema\ColumnType;
+use AsceticSoft\RowcastSchema\Schema\ReferentialAction;
 
 final class MigrationGenerator
 {
@@ -70,6 +71,7 @@ final class MigrationGenerator
             use AsceticSoft\\RowcastSchema\\Migration\\AbstractMigration;
             use AsceticSoft\\RowcastSchema\\Schema\\Column;
             use AsceticSoft\\RowcastSchema\\Schema\\ColumnType;
+            use AsceticSoft\\RowcastSchema\\Schema\\ReferentialAction;
             use AsceticSoft\\RowcastSchema\\SchemaBuilder\\SchemaBuilder;
             use AsceticSoft\\RowcastSchema\\SchemaBuilder\\TableBuilder;
 
@@ -132,8 +134,8 @@ final class MigrationGenerator
                         $this->exportValue($operation->foreignKey->columns),
                         $operation->foreignKey->referenceTable,
                         $this->exportValue($operation->foreignKey->referenceColumns),
-                        $operation->foreignKey->onDelete !== null ? "'" . $operation->foreignKey->onDelete . "'" : 'null',
-                        $operation->foreignKey->onUpdate !== null ? "'" . $operation->foreignKey->onUpdate . "'" : 'null',
+                        $operation->foreignKey->onDelete !== null ? $this->exportReferentialAction($operation->foreignKey->onDelete) : 'null',
+                        $operation->foreignKey->onUpdate !== null ? $this->exportReferentialAction($operation->foreignKey->onUpdate) : 'null',
                     ),
             ],
             $operation instanceof DropForeignKey => $reverse
@@ -180,8 +182,8 @@ final class MigrationGenerator
                 $this->exportValue($fk->columns),
                 $this->exportValue($fk->referenceTable),
                 $this->exportValue($fk->referenceColumns),
-                $fk->onDelete !== null ? $this->exportValue($fk->onDelete) : 'null',
-                $fk->onUpdate !== null ? $this->exportValue($fk->onUpdate) : 'null',
+                $fk->onDelete !== null ? $this->exportReferentialAction($fk->onDelete) : 'null',
+                $fk->onUpdate !== null ? $this->exportReferentialAction($fk->onUpdate) : 'null',
             );
         }
 
@@ -324,5 +326,14 @@ final class MigrationGenerator
         }
 
         return '[' . implode(', ', $items) . ']';
+    }
+
+    private function exportReferentialAction(ReferentialAction|string $action): string
+    {
+        if ($action instanceof ReferentialAction) {
+            return 'ReferentialAction::' . $action->name;
+        }
+
+        return var_export($action, true);
     }
 }

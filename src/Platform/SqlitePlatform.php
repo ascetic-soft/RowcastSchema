@@ -6,6 +6,7 @@ namespace AsceticSoft\RowcastSchema\Platform;
 
 use AsceticSoft\RowcastSchema\Diff\Operation\AlterColumn;
 use AsceticSoft\RowcastSchema\Schema\ForeignKey;
+use AsceticSoft\RowcastSchema\Schema\ReferentialAction;
 use AsceticSoft\RowcastSchema\Schema\Table;
 
 final readonly class SqlitePlatform extends AbstractPlatform
@@ -86,10 +87,10 @@ final readonly class SqlitePlatform extends AbstractPlatform
                 $referenceColumns,
             );
             if ($foreignKey->onDelete !== null) {
-                $fkSql .= ' ON DELETE ' . strtoupper($foreignKey->onDelete);
+                $fkSql .= ' ON DELETE ' . ReferentialAction::toSql($foreignKey->onDelete);
             }
             if ($foreignKey->onUpdate !== null) {
-                $fkSql .= ' ON UPDATE ' . strtoupper($foreignKey->onUpdate);
+                $fkSql .= ' ON UPDATE ' . ReferentialAction::toSql($foreignKey->onUpdate);
             }
             $parts[] = $fkSql;
         }

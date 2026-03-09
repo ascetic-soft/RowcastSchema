@@ -18,6 +18,7 @@ use AsceticSoft\RowcastSchema\Schema\Column;
 use AsceticSoft\RowcastSchema\Schema\ColumnType;
 use AsceticSoft\RowcastSchema\Schema\ForeignKey;
 use AsceticSoft\RowcastSchema\Schema\Index;
+use AsceticSoft\RowcastSchema\Schema\ReferentialAction;
 use AsceticSoft\RowcastSchema\Schema\Schema;
 use AsceticSoft\RowcastSchema\Schema\Table;
 use PHPUnit\Framework\TestCase;
@@ -103,7 +104,13 @@ final class SchemaDifferTest extends TestCase
                     'idx_users_email' => new Index('idx_users_email', ['email']),
                 ],
                 foreignKeys: [
-                    'fk_users_account' => new ForeignKey('fk_users_account', ['id'], 'accounts', ['id'], onDelete: 'CASCADE'),
+                    'fk_users_account' => new ForeignKey(
+                        'fk_users_account',
+                        ['id'],
+                        'accounts',
+                        ['id'],
+                        onDelete: ReferentialAction::Cascade,
+                    ),
                     'fk_users_profile' => new ForeignKey('fk_users_profile', ['id'], 'profiles', ['user_id']),
                 ],
             ),
