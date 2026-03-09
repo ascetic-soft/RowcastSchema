@@ -59,8 +59,8 @@ final class SchemaDifferTest extends TestCase
 
         $operations = new SchemaDiffer()->diff($from, $to);
         self::assertCount(2, $operations);
-        self::assertInstanceOf(AddColumn::class, $operations[0]);
-        self::assertInstanceOf(CreateTable::class, $operations[1]);
+        self::assertInstanceOf(CreateTable::class, $operations[0]);
+        self::assertInstanceOf(AddColumn::class, $operations[1]);
     }
 
     public function testDetectsAlterDropAndRecreateOperations(): void
@@ -127,5 +127,144 @@ final class SchemaDifferTest extends TestCase
         self::assertContains(DropForeignKey::class, $classes);
         self::assertContains(AddForeignKey::class, $classes);
         self::assertContains(DropTable::class, $classes);
+    }
+
+    public function testCreateTableOrderRespectsForeignKeys(): void
+    {
+        $from = new Schema();
+        $to = new Schema([
+            'posts' => new Table(
+                name: 'posts',
+                columns: [
+                    'id' => new Column('id', ColumnType::Integer, primaryKey: true),
+                    'user_id' => new Column('user_id', ColumnType::Integer),
+                ],
+                primaryKey: ['id'],
+                foreignKeys: [
+                    'fk_posts_users' => new ForeignKey('fk_posts_users', ['user_id'], 'users', ['id']),
+                ],
+            ),
+            'users' => new Table(
+                name: 'users',
+                columns: [
+                    'id' => new Column('id', ColumnType::Integer, primaryKey: true),
+                ],
+                primaryKey: ['id'],
+            ),
+        ]);
+
+        $operations = new SchemaDiffer()->diff($from, $to);
+        $createTableOperations = array_values(array_filter(
+            $operations,
+            static fn (object $operation): bool => $operation instanceof CreateTable,
+        ));
+
+        self::assertCount(2, $createTableOperations);
+        self::assertSame('users', $createTableOperations[0]->table->name);
+        self::assertSame('posts', $createTableOperations[1]->table->name);
+    }
+
+    public function testDropTableOrderRespectsForeignKeys(): void
+    {
+        $from = new Schema([
+            'posts' => new Table(
+                name: 'posts',
+                columns: [
+                    'id' => new Column('id', ColumnType::Integer, primaryKey: true),
+                    'user_id' => new Column('user_id', ColumnType::Integer),
+                ],
+                primaryKey: ['id'],
+                foreignKeys: [
+                    'fk_posts_users' => new ForeignKey('fk_posts_users', ['user_id'], 'users', ['id']),
+                ],
+            ),
+            'users' => new Table(
+                name: 'users',
+                columns: [
+                    'id' => new Column('id', ColumnType::Integer, primaryKey: true),
+                ],
+                primaryKey: ['id'],
+            ),
+        ]);
+
+        $to = new Schema();
+
+        $operations = new SchemaDiffer()->diff($from, $to);
+        $dropTableOperations = array_values(array_filter(
+            $operations,
+            static fn (object $operation): bool => $operation instanceof DropTable,
+        ));
+
+        self::assertCount(2, $dropTableOperations);
+        self::assertSame('posts', $dropTableOperations[0]->tableName);
+        self::assertSame('users', $dropTableOperations[1]->tableName);
+    }
+
+    public function testCircularForeignKeysExtractedAsAddForeignKeys(): void
+    {
+        $from = new Schema();
+        $to = new Schema([
+            'a' => new Table(
+                name: 'a',
+                columns: [
+                    'id' => new Column('id', ColumnType::Integer, primaryKey: true),
+                    'b_id' => new Column('b_id', ColumnType::Integer),
+                ],
+                primaryKey: ['id'],
+                foreignKeys: [
+                    'fk_a_b' => new ForeignKey('fk_a_b', ['b_id'], 'b', ['id']),
+                ],
+            ),
+            'b' => new Table(
+                name: 'b',
+                columns: [
+                    'id' => new Column('id', ColumnType::Integer, primaryKey: true),
+                    'a_id' => new Column('a_id', ColumnType::Integer),
+                ],
+                primaryKey: ['id'],
+                foreignKeys: [
+                    'fk_b_a' => new ForeignKey('fk_b_a', ['a_id'], 'a', ['id']),
+                ],
+            ),
+        ]);
+
+        $operations = new SchemaDiffer()->diff($from, $to);
+
+        self::assertInstanceOf(CreateTable::class, $operations[0]);
+        self::assertInstanceOf(CreateTable::class, $operations[1]);
+        self::assertSame([], $operations[0]->table->foreignKeys);
+        self::assertSame([], $operations[1]->table->foreignKeys);
+
+        $addForeignKeyOperations = array_values(array_filter(
+            $operations,
+            static fn (object $operation): bool => $operation instanceof AddForeignKey,
+        ));
+
+        self::assertCount(2, $addForeignKeyOperations);
+        self::assertSame('a', $addForeignKeyOperations[0]->tableName);
+        self::assertSame('b', $addForeignKeyOperations[1]->tableName);
+    }
+
+    public function testSelfReferencingForeignKeyDoesNotAffectOrder(): void
+    {
+        $from = new Schema();
+        $to = new Schema([
+            'users' => new Table(
+                name: 'users',
+                columns: [
+                    'id' => new Column('id', ColumnType::Integer, primaryKey: true),
+                    'manager_id' => new Column('manager_id', ColumnType::Integer, nullable: true),
+                ],
+                primaryKey: ['id'],
+                foreignKeys: [
+                    'fk_users_manager' => new ForeignKey('fk_users_manager', ['manager_id'], 'users', ['id']),
+                ],
+            ),
+        ]);
+
+        $operations = new SchemaDiffer()->diff($from, $to);
+        self::assertCount(1, $operations);
+        self::assertInstanceOf(CreateTable::class, $operations[0]);
+        self::assertArrayHasKey('fk_users_manager', $operations[0]->table->foreignKeys);
     }
 }
