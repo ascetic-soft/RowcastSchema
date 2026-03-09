@@ -22,9 +22,21 @@ final readonly class PostgresIntrospector implements IntrospectorInterface
     {
         $stmt = $pdo->query(
             "SELECT c.table_name, c.column_name, c.udt_name, c.is_nullable, c.column_default,
-                    c.character_maximum_length, c.numeric_precision, c.numeric_scale
+                    c.character_maximum_length, c.numeric_precision, c.numeric_scale,
+                    pg_catalog.format_type(a.atttypid, a.atttypmod) AS formatted_type
              FROM information_schema.columns c
+             JOIN pg_catalog.pg_class t
+               ON t.relname = c.table_name
+             JOIN pg_catalog.pg_namespace n
+               ON n.oid = t.relnamespace
+              AND n.nspname = c.table_schema
+             JOIN pg_catalog.pg_attribute a
+               ON a.attrelid = t.oid
+              AND a.attname = c.column_name
+              AND a.attnum > 0
+              AND NOT a.attisdropped
              WHERE c.table_schema = 'public'
+               AND t.relkind = 'r'
              ORDER BY c.table_name, c.ordinal_position",
         );
         if ($stmt === false) {
@@ -41,6 +53,7 @@ final readonly class PostgresIntrospector implements IntrospectorInterface
             $tableName = \is_string($row['table_name'] ?? null) ? $row['table_name'] : '';
             $columnName = \is_string($row['column_name'] ?? null) ? $row['column_name'] : '';
             $udtName = \is_string($row['udt_name'] ?? null) ? $row['udt_name'] : '';
+            $formattedType = \is_string($row['formatted_type'] ?? null) ? $row['formatted_type'] : $udtName;
             $isNullable = \is_string($row['is_nullable'] ?? null) ? $row['is_nullable'] : 'NO';
             $columnDefaultRaw = \is_string($row['column_default'] ?? null) ? $row['column_default'] : null;
             if ($tableName === '' || $columnName === '' || $udtName === '') {
@@ -54,11 +67,11 @@ final readonly class PostgresIntrospector implements IntrospectorInterface
                 ];
             }
 
-            $abstractType = $this->typeMapper->toAbstractType($udtName);
+            $abstractType = $this->typeMapper->toAbstractType($formattedType);
             $databaseType = null;
             if ($abstractType === null) {
                 $abstractType = ColumnType::Text;
-                $databaseType = $udtName;
+                $databaseType = $formattedType;
             }
             $length = $abstractType === ColumnType::String ? $this->toNullableInt($row['character_maximum_length'] ?? null) : null;
             $precision = $abstractType === ColumnType::Decimal ? $this->toNullableInt($row['numeric_precision'] ?? null) : null;
