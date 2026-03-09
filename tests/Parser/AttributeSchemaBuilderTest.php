@@ -6,6 +6,7 @@ namespace AsceticSoft\RowcastSchema\Tests\Parser;
 
 use AsceticSoft\RowcastSchema\Parser\AttributeSchemaBuilder;
 use AsceticSoft\RowcastSchema\Schema\ColumnType;
+use AsceticSoft\RowcastSchema\Tests\Fixtures\Entity\Article;
 use AsceticSoft\RowcastSchema\Tests\Fixtures\Entity\InvalidTypeEntity;
 use AsceticSoft\RowcastSchema\Tests\Fixtures\Entity\OzonCategoryEmbedding;
 use AsceticSoft\RowcastSchema\Tests\Fixtures\Entity\Post;
@@ -19,6 +20,7 @@ final class AttributeSchemaBuilderTest extends TestCase
         $schema = new AttributeSchemaBuilder()->build([
             User::class,
             Post::class,
+            Article::class,
             \stdClass::class,
         ]);
 
@@ -43,6 +45,17 @@ final class AttributeSchemaBuilderTest extends TestCase
         $posts = $schema->getTable('blog_posts');
         self::assertNotNull($posts);
         self::assertArrayHasKey('fk_posts_user', $posts->foreignKeys);
+
+        $articles = $schema->getTable('articles');
+        self::assertNotNull($articles);
+
+        $published = $articles->getColumn('published');
+        self::assertNotNull($published);
+        self::assertFalse($published->default);
+
+        $featured = $articles->getColumn('featured');
+        self::assertNotNull($featured);
+        self::assertTrue($featured->default);
     }
 
     public function testThrowsWhenColumnTypeCannotBeInferred(): void

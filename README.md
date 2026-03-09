@@ -197,6 +197,8 @@ Type inference for attribute columns:
 - `BackedEnum` (`string`) -> `enum` + automatic `values`
 - `BackedEnum` (`int`) -> `integer`
 - override is still possible via `#[Column(type: ...)]`
+- if `#[Column(default: ...)]` is omitted and a property has a class default (e.g. `public bool $published = false;`), that value is used as the DB default
+- when both are present, `#[Column(default: ...)]` has priority over the property default
 
 ### Abstract column types
 

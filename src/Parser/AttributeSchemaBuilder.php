@@ -80,7 +80,7 @@ final readonly class AttributeSchemaBuilder
                     name: $columnName,
                     type: $type,
                     nullable: $nullable,
-                    default: $columnAttribute->default,
+                    default: $this->resolveColumnDefault($columnAttribute, $property),
                     primaryKey: $columnAttribute->primaryKey,
                     autoIncrement: $columnAttribute->autoIncrement,
                     length: $columnAttribute->length,
@@ -279,6 +279,28 @@ final readonly class AttributeSchemaBuilder
         }
 
         return $type->allowsNull();
+    }
+
+    private function resolveColumnDefault(ColumnAttribute $columnAttribute, \ReflectionProperty $property): mixed
+    {
+        if ($columnAttribute->default !== null) {
+            return $columnAttribute->default;
+        }
+
+        if (!$property->hasDefaultValue()) {
+            return null;
+        }
+
+        $default = $property->getDefaultValue();
+        if ($default instanceof \BackedEnum) {
+            return $default->value;
+        }
+
+        if (\is_scalar($default) || $default === null) {
+            return $default;
+        }
+
+        return null;
     }
 
     private function extractPropertyTypeName(\ReflectionProperty $property): ?string

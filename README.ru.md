@@ -191,6 +191,8 @@ final class Post
 - `BackedEnum` (`string`) -> `enum` + автоматическое заполнение `values`
 - `BackedEnum` (`int`) -> `integer`
 - при необходимости тип можно переопределить через `#[Column(type: ...)]`
+- если в `#[Column(default: ...)]` значение не задано, а у свойства есть дефолт в классе (например `public bool $published = false;`), он используется как default в БД
+- если заданы оба варианта, приоритет у `#[Column(default: ...)]`
 
 ### Абстрактные типы колонок
 
