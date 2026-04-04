@@ -14,6 +14,8 @@ use AsceticSoft\RowcastSchema\Diff\Operation\DropIndex;
 use AsceticSoft\RowcastSchema\Diff\Operation\DropTable;
 use AsceticSoft\RowcastSchema\Diff\Operation\OperationInterface;
 use AsceticSoft\RowcastSchema\Diff\Operation\AlterColumn;
+use AsceticSoft\RowcastSchema\Schema\ForeignKey;
+use AsceticSoft\RowcastSchema\Schema\ReferentialAction;
 use AsceticSoft\RowcastSchema\Schema\Schema;
 use AsceticSoft\RowcastSchema\Schema\Table;
 
@@ -360,7 +362,7 @@ final class SchemaDiffer
                 continue;
             }
 
-            if ($oldFk != $newFk) {
+            if (!$this->foreignKeysSemanticallyEqual($oldFk, $newFk)) {
                 $operations[] = new DropForeignKey($to->name, $fkName, $oldFk);
                 $operations[] = new AddForeignKey($to->name, $newFk);
             }
@@ -373,5 +375,40 @@ final class SchemaDiffer
         }
 
         return $operations;
+    }
+
+    private function foreignKeysSemanticallyEqual(ForeignKey $a, ForeignKey $b): bool
+    {
+        return $a->name === $b->name
+            && $a->columns === $b->columns
+            && $a->referenceTable === $b->referenceTable
+            && $a->referenceColumns === $b->referenceColumns
+            && $this->normalizeReferentialActionForCompare($a->onDelete) === $this->normalizeReferentialActionForCompare($b->onDelete)
+            && $this->normalizeReferentialActionForCompare($a->onUpdate) === $this->normalizeReferentialActionForCompare($b->onUpdate);
+    }
+
+    /**
+     * Align introspection (NO ACTION → null) with schema files (explicit NO ACTION → enum)
+     * and enum vs equivalent string literals from migrations.
+     *
+     * @return ReferentialAction|string|null
+     */
+    private function normalizeReferentialActionForCompare(ReferentialAction|string|null $value): ReferentialAction|string|null
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if ($value instanceof ReferentialAction) {
+            return $value === ReferentialAction::NoAction ? null : $value;
+        }
+
+        $resolved = ReferentialAction::tryFromString($value);
+
+        if ($resolved instanceof ReferentialAction) {
+            return $resolved === ReferentialAction::NoAction ? null : $resolved;
+        }
+
+        return $resolved;
     }
 }

@@ -267,4 +267,162 @@ final class SchemaDifferTest extends TestCase
         self::assertInstanceOf(CreateTable::class, $operations[0]);
         self::assertArrayHasKey('fk_users_manager', $operations[0]->table->foreignKeys);
     }
+
+    public function testForeignKeyEnumVersusEquivalentStringProducesNoOperations(): void
+    {
+        $columns = [
+            'id' => new Column('id', ColumnType::Integer, primaryKey: true),
+            'parent_id' => new Column('parent_id', ColumnType::Integer, nullable: true),
+        ];
+
+        $from = new Schema([
+            'categories' => new Table(
+                name: 'categories',
+                columns: $columns,
+                primaryKey: ['id'],
+                foreignKeys: [
+                    'fk_categories_parent' => new ForeignKey(
+                        'fk_categories_parent',
+                        ['parent_id'],
+                        'categories',
+                        ['id'],
+                        onDelete: ReferentialAction::Cascade,
+                        onUpdate: ReferentialAction::Cascade,
+                    ),
+                ],
+            ),
+        ]);
+
+        $to = new Schema([
+            'categories' => new Table(
+                name: 'categories',
+                columns: $columns,
+                primaryKey: ['id'],
+                foreignKeys: [
+                    'fk_categories_parent' => new ForeignKey(
+                        'fk_categories_parent',
+                        ['parent_id'],
+                        'categories',
+                        ['id'],
+                        onDelete: 'CASCADE',
+                        onUpdate: 'CASCADE',
+                    ),
+                ],
+            ),
+        ]);
+
+        $operations = new SchemaDiffer()->diff($from, $to);
+        self::assertSame([], $operations);
+    }
+
+    public function testForeignKeyNullVersusNoActionProducesNoOperations(): void
+    {
+        $columns = [
+            'id' => new Column('id', ColumnType::Integer, primaryKey: true),
+            'card_id' => new Column('card_id', ColumnType::Integer),
+        ];
+
+        $fkIntrospected = new ForeignKey(
+            'fk_card_images_card_id',
+            ['card_id'],
+            'cards',
+            ['id'],
+            onDelete: ReferentialAction::Cascade,
+            onUpdate: null,
+        );
+
+        $from = new Schema([
+            'card_images' => new Table(
+                name: 'card_images',
+                columns: $columns,
+                primaryKey: ['id'],
+                foreignKeys: ['fk_card_images_card_id' => $fkIntrospected],
+            ),
+        ]);
+
+        $toExplicitEnum = new Schema([
+            'card_images' => new Table(
+                name: 'card_images',
+                columns: $columns,
+                primaryKey: ['id'],
+                foreignKeys: [
+                    'fk_card_images_card_id' => new ForeignKey(
+                        'fk_card_images_card_id',
+                        ['card_id'],
+                        'cards',
+                        ['id'],
+                        onDelete: ReferentialAction::Cascade,
+                        onUpdate: ReferentialAction::NoAction,
+                    ),
+                ],
+            ),
+        ]);
+
+        $toExplicitString = new Schema([
+            'card_images' => new Table(
+                name: 'card_images',
+                columns: $columns,
+                primaryKey: ['id'],
+                foreignKeys: [
+                    'fk_card_images_card_id' => new ForeignKey(
+                        'fk_card_images_card_id',
+                        ['card_id'],
+                        'cards',
+                        ['id'],
+                        onDelete: ReferentialAction::Cascade,
+                        onUpdate: 'NO ACTION',
+                    ),
+                ],
+            ),
+        ]);
+
+        self::assertSame([], new SchemaDiffer()->diff($from, $toExplicitEnum));
+        self::assertSame([], new SchemaDiffer()->diff($from, $toExplicitString));
+    }
+
+    public function testForeignKeyDifferentActionsStillEmitsDropAndAdd(): void
+    {
+        $columns = [
+            'id' => new Column('id', ColumnType::Integer, primaryKey: true),
+            'org_id' => new Column('org_id', ColumnType::Integer, nullable: true),
+        ];
+
+        $from = new Schema([
+            'users' => new Table(
+                name: 'users',
+                columns: $columns,
+                primaryKey: ['id'],
+                foreignKeys: [
+                    'fk_users_org' => new ForeignKey(
+                        'fk_users_org',
+                        ['org_id'],
+                        'organizations',
+                        ['id'],
+                        onDelete: ReferentialAction::Cascade,
+                    ),
+                ],
+            ),
+        ]);
+
+        $to = new Schema([
+            'users' => new Table(
+                name: 'users',
+                columns: $columns,
+                primaryKey: ['id'],
+                foreignKeys: [
+                    'fk_users_org' => new ForeignKey(
+                        'fk_users_org',
+                        ['org_id'],
+                        'organizations',
+                        ['id'],
+                        onDelete: ReferentialAction::SetNull,
+                    ),
+                ],
+            ),
+        ]);
+
+        $operations = new SchemaDiffer()->diff($from, $to);
+        self::assertContains(DropForeignKey::class, array_map(static fn (object $op): string => $op::class, $operations));
+        self::assertContains(AddForeignKey::class, array_map(static fn (object $op): string => $op::class, $operations));
+    }
 }
