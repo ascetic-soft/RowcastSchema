@@ -11,4 +11,9 @@ final readonly class DropIndex implements OperationInterface
         public string $indexName,
     ) {
     }
+
+    public function reverse(): ?OperationInterface
+    {
+        return null;
+    }
 }

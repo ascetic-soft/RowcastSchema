@@ -10,7 +10,6 @@ use AsceticSoft\RowcastSchema\Cli\Config;
 use AsceticSoft\RowcastSchema\Cli\OperationDescriber;
 use AsceticSoft\RowcastSchema\Cli\TableIgnoreMatcher;
 use AsceticSoft\RowcastSchema\Diff\SchemaDiffer;
-use AsceticSoft\RowcastSchema\Introspector\IntrospectorFactory;
 use AsceticSoft\RowcastSchema\Introspector\IntrospectorInterface;
 use AsceticSoft\RowcastSchema\Migration\MigrationGenerator;
 use AsceticSoft\RowcastSchema\Parser\SchemaParserInterface;
@@ -32,18 +31,16 @@ final class DiffCommandTest extends TestCase
                 return new Schema();
             }
         };
-        $factory = new IntrospectorFactory([
-            'sqlite' => static fn (): IntrospectorInterface => new class () implements IntrospectorInterface {
-                public function introspect(\PDO $pdo): Schema
-                {
-                    return new Schema();
-                }
-            },
-        ]);
+        $introspector = new class () implements IntrospectorInterface {
+            public function introspect(\PDO $pdo): Schema
+            {
+                return new Schema();
+            }
+        };
 
         $command = new DiffCommand(
             $parser,
-            $factory,
+            $introspector,
             new SchemaDiffer(),
             new MigrationGenerator(),
             new TableIgnoreMatcher(),
@@ -75,18 +72,16 @@ final class DiffCommandTest extends TestCase
                 ]);
             }
         };
-        $factory = new IntrospectorFactory([
-            'sqlite' => static fn (): IntrospectorInterface => new class () implements IntrospectorInterface {
-                public function introspect(\PDO $pdo): Schema
-                {
-                    return new Schema();
-                }
-            },
-        ]);
+        $introspector = new class () implements IntrospectorInterface {
+            public function introspect(\PDO $pdo): Schema
+            {
+                return new Schema();
+            }
+        };
 
         $command = new DiffCommand(
             $parser,
-            $factory,
+            $introspector,
             new SchemaDiffer(),
             new MigrationGenerator(),
             new TableIgnoreMatcher(),

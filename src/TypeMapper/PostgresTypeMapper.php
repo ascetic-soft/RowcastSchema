@@ -7,11 +7,11 @@ namespace AsceticSoft\RowcastSchema\TypeMapper;
 use AsceticSoft\RowcastSchema\Schema\Column;
 use AsceticSoft\RowcastSchema\Schema\ColumnType;
 
-final class PostgresTypeMapper implements TypeMapperInterface
+final class PostgresTypeMapper extends AbstractTypeMapper
 {
-    public function toSqlType(Column $column): string
+    protected function mapToSqlType(Column $column): string
     {
-        return $column->databaseType ?? match ($column->requireType()) {
+        return match ($column->requireType()) {
             ColumnType::Integer => $column->autoIncrement ? 'SERIAL' : 'INTEGER',
             ColumnType::Smallint => $column->autoIncrement ? 'SMALLSERIAL' : 'SMALLINT',
             ColumnType::Bigint => $column->autoIncrement ? 'BIGSERIAL' : 'BIGINT',
@@ -32,37 +32,35 @@ final class PostgresTypeMapper implements TypeMapperInterface
         };
     }
 
-    public function toAbstractType(string $dbType): ?ColumnType
+    protected function mapToAbstractType(string $normalizedType): ?ColumnType
     {
-        $normalized = strtolower($dbType);
-
         return match (true) {
-            str_contains($normalized, 'smallserial') => ColumnType::Smallint,
-            str_contains($normalized, 'serial') => ColumnType::Integer,
-            $normalized === 'int2',
-            str_contains($normalized, 'smallint') => ColumnType::Smallint,
-            $normalized === 'int8',
-            str_contains($normalized, 'bigint') || str_contains($normalized, 'bigserial') => ColumnType::Bigint,
-            $normalized === 'int4',
-            str_contains($normalized, 'integer') => ColumnType::Integer,
-            $normalized === 'bpchar',
-            str_contains($normalized, 'character varying') || str_contains($normalized, 'varchar') => ColumnType::String,
-            str_contains($normalized, 'text') => ColumnType::Text,
-            $normalized === 'bool',
-            str_contains($normalized, 'boolean') => ColumnType::Boolean,
-            str_contains($normalized, 'numeric') || str_contains($normalized, 'decimal') => ColumnType::Decimal,
-            $normalized === 'float8',
-            str_contains($normalized, 'double precision') => ColumnType::Double,
-            $normalized === 'float4',
-            str_contains($normalized, 'real') => ColumnType::Float,
-            str_contains($normalized, 'timestamptz'),
-            str_contains($normalized, 'with time zone') => ColumnType::Timestamptz,
-            str_contains($normalized, 'timestamp') => ColumnType::Datetime,
-            $normalized === 'date' => ColumnType::Date,
-            str_contains($normalized, 'time') => ColumnType::Time,
-            $normalized === 'uuid' => ColumnType::Uuid,
-            str_contains($normalized, 'json') => ColumnType::Json,
-            str_contains($normalized, 'bytea') => ColumnType::Binary,
+            str_contains($normalizedType, 'smallserial') => ColumnType::Smallint,
+            str_contains($normalizedType, 'serial') => ColumnType::Integer,
+            $normalizedType === 'int2',
+            str_contains($normalizedType, 'smallint') => ColumnType::Smallint,
+            $normalizedType === 'int8',
+            str_contains($normalizedType, 'bigint') || str_contains($normalizedType, 'bigserial') => ColumnType::Bigint,
+            $normalizedType === 'int4',
+            str_contains($normalizedType, 'integer') => ColumnType::Integer,
+            $normalizedType === 'bpchar',
+            str_contains($normalizedType, 'character varying') || str_contains($normalizedType, 'varchar') => ColumnType::String,
+            str_contains($normalizedType, 'text') => ColumnType::Text,
+            $normalizedType === 'bool',
+            str_contains($normalizedType, 'boolean') => ColumnType::Boolean,
+            str_contains($normalizedType, 'numeric') || str_contains($normalizedType, 'decimal') => ColumnType::Decimal,
+            $normalizedType === 'float8',
+            str_contains($normalizedType, 'double precision') => ColumnType::Double,
+            $normalizedType === 'float4',
+            str_contains($normalizedType, 'real') => ColumnType::Float,
+            str_contains($normalizedType, 'timestamptz'),
+            str_contains($normalizedType, 'with time zone') => ColumnType::Timestamptz,
+            str_contains($normalizedType, 'timestamp') => ColumnType::Datetime,
+            $normalizedType === 'date' => ColumnType::Date,
+            str_contains($normalizedType, 'time') => ColumnType::Time,
+            $normalizedType === 'uuid' => ColumnType::Uuid,
+            str_contains($normalizedType, 'json') => ColumnType::Json,
+            str_contains($normalizedType, 'bytea') => ColumnType::Binary,
             default => null,
         };
     }

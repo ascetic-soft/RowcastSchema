@@ -14,4 +14,13 @@ final readonly class DropForeignKey implements OperationInterface
         public ?ForeignKey $foreignKey = null,
     ) {
     }
+
+    public function reverse(): ?AddForeignKey
+    {
+        if ($this->foreignKey === null) {
+            return null;
+        }
+
+        return new AddForeignKey($this->tableName, $this->foreignKey);
+    }
 }

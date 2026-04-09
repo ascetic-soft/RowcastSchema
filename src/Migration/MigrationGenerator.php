@@ -47,13 +47,17 @@ final class MigrationGenerator
     {
         $upLines = [];
         foreach ($operations as $operation) {
-            $upLines = [...$upLines, ...$this->operationToBuilderLines($operation, reverse: false)];
+            $upLines = [...$upLines, ...$this->operationToBuilderLines($operation)];
         }
 
         $downLines = [];
-        $reversed = array_reverse($operations);
-        foreach ($reversed as $operation) {
-            $downLines = [...$downLines, ...$this->operationToBuilderLines($operation, reverse: true)];
+        foreach (array_reverse($operations) as $operation) {
+            $reverse = $operation->reverse();
+            if ($reverse !== null) {
+                $downLines = [...$downLines, ...$this->operationToBuilderLines($reverse)];
+            } else {
+                $downLines[] = $this->irreversibleComment($operation);
+            }
         }
 
         $upBody = $upLines !== []
@@ -94,54 +98,86 @@ final class MigrationGenerator
     /**
      * @return list<string>
      */
-    private function operationToBuilderLines(OperationInterface $operation, bool $reverse): array
+    private function operationToBuilderLines(OperationInterface $operation): array
     {
         return match (true) {
-            $operation instanceof CreateTable => $reverse
-                ? [\sprintf("\$schema->dropTable('%s');", $operation->table->name)]
-                : $this->createTableLines($operation),
-            $operation instanceof DropTable => $reverse
-                ? [\sprintf('// TODO: recreate dropped table %s manually for rollback.', $operation->tableName)]
-                : [\sprintf("\$schema->dropTable('%s');", $operation->tableName)],
-            $operation instanceof AddColumn => $reverse
-                ? [\sprintf("\$schema->dropColumn('%s', '%s');", $operation->tableName, $operation->column->name)]
-                : [\sprintf("\$schema->addColumn('%s', %s);", $operation->tableName, $this->columnExpression($operation->column))],
-            $operation instanceof DropColumn => $reverse
-                ? [\sprintf('// TODO: restore dropped column %s.%s manually for rollback.', $operation->tableName, $operation->columnName)]
-                : [\sprintf("\$schema->dropColumn('%s', '%s');", $operation->tableName, $operation->columnName)],
-            $operation instanceof AlterColumn => $this->alterColumnLines($operation, $reverse),
-            $operation instanceof AddIndex => [
-                $reverse
-                    ? \sprintf("\$schema->dropIndex('%s', '%s');", $operation->tableName, $operation->index->name)
-                    : \sprintf(
-                        "\$schema->addIndex('%s', '%s', %s, %s);",
-                        $operation->tableName,
-                        $operation->index->name,
-                        $this->exportValue($operation->index->columns),
-                        $operation->index->unique ? 'true' : 'false',
-                    ),
-            ],
-            $operation instanceof DropIndex => $reverse
-                ? [\sprintf('// TODO: restore dropped index %s on %s manually for rollback.', $operation->indexName, $operation->tableName)]
-                : [\sprintf("\$schema->dropIndex('%s', '%s');", $operation->tableName, $operation->indexName)],
-            $operation instanceof AddForeignKey => [
-                $reverse
-                    ? \sprintf("\$schema->dropForeignKey('%s', '%s');", $operation->tableName, $operation->foreignKey->name)
-                    : \sprintf(
-                        "\$schema->addForeignKey('%s', '%s', %s, '%s', %s, %s, %s);",
-                        $operation->tableName,
-                        $operation->foreignKey->name,
-                        $this->exportValue($operation->foreignKey->columns),
-                        $operation->foreignKey->referenceTable,
-                        $this->exportValue($operation->foreignKey->referenceColumns),
-                        $operation->foreignKey->onDelete !== null ? $this->exportReferentialAction($operation->foreignKey->onDelete) : 'null',
-                        $operation->foreignKey->onUpdate !== null ? $this->exportReferentialAction($operation->foreignKey->onUpdate) : 'null',
-                    ),
-            ],
-            $operation instanceof DropForeignKey => $reverse
-                ? [\sprintf('// TODO: restore dropped foreign key %s on %s manually for rollback.', $operation->foreignKeyName, $operation->tableName)]
-                : [\sprintf("\$schema->dropForeignKey('%s', '%s');", $operation->tableName, $operation->foreignKeyName)],
+            $operation instanceof CreateTable => $this->createTableLines($operation),
+            $operation instanceof DropTable => [\sprintf("\$schema->dropTable('%s');", $operation->tableName)],
+            $operation instanceof AddColumn => [\sprintf(
+                "\$schema->addColumn('%s', %s);",
+                $operation->tableName,
+                $this->columnExpression($operation->column),
+            )],
+            $operation instanceof DropColumn => [\sprintf(
+                "\$schema->dropColumn('%s', '%s');",
+                $operation->tableName,
+                $operation->columnName,
+            )],
+            $operation instanceof AlterColumn => [\sprintf(
+                "\$schema->alterColumn('%s', '%s', %s);",
+                $operation->tableName,
+                $operation->columnName,
+                $this->columnExpression($operation->newColumn),
+            )],
+            $operation instanceof AddIndex => [\sprintf(
+                "\$schema->addIndex('%s', '%s', %s, %s);",
+                $operation->tableName,
+                $operation->index->name,
+                $this->exportValue($operation->index->columns),
+                $operation->index->unique ? 'true' : 'false',
+            )],
+            $operation instanceof DropIndex => [\sprintf(
+                "\$schema->dropIndex('%s', '%s');",
+                $operation->tableName,
+                $operation->indexName,
+            )],
+            $operation instanceof AddForeignKey => [\sprintf(
+                "\$schema->addForeignKey('%s', '%s', %s, '%s', %s, %s, %s);",
+                $operation->tableName,
+                $operation->foreignKey->name,
+                $this->exportValue($operation->foreignKey->columns),
+                $operation->foreignKey->referenceTable,
+                $this->exportValue($operation->foreignKey->referenceColumns),
+                $operation->foreignKey->onDelete !== null ? $this->exportReferentialAction($operation->foreignKey->onDelete) : 'null',
+                $operation->foreignKey->onUpdate !== null ? $this->exportReferentialAction($operation->foreignKey->onUpdate) : 'null',
+            )],
+            $operation instanceof DropForeignKey => [\sprintf(
+                "\$schema->dropForeignKey('%s', '%s');",
+                $operation->tableName,
+                $operation->foreignKeyName,
+            )],
             default => ['// Unsupported operation in generator.'],
+        };
+    }
+
+    private function irreversibleComment(OperationInterface $operation): string
+    {
+        return match (true) {
+            $operation instanceof DropTable => \sprintf(
+                '// TODO: recreate dropped table %s manually for rollback.',
+                $operation->tableName,
+            ),
+            $operation instanceof DropColumn => \sprintf(
+                '// TODO: restore dropped column %s.%s manually for rollback.',
+                $operation->tableName,
+                $operation->columnName,
+            ),
+            $operation instanceof DropIndex => \sprintf(
+                '// TODO: restore dropped index %s on %s manually for rollback.',
+                $operation->indexName,
+                $operation->tableName,
+            ),
+            $operation instanceof DropForeignKey => \sprintf(
+                '// TODO: restore dropped foreign key %s on %s manually for rollback.',
+                $operation->foreignKeyName,
+                $operation->tableName,
+            ),
+            $operation instanceof AlterColumn => \sprintf(
+                '// TODO: restore previous definition for altered column %s.%s manually for rollback.',
+                $operation->tableName,
+                $operation->columnName,
+            ),
+            default => '// TODO: rollback not available for this operation.',
         };
     }
 
@@ -270,36 +306,6 @@ final class MigrationGenerator
         }
 
         return 'new Column(' . implode(', ', $parts) . ')';
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function alterColumnLines(AlterColumn $operation, bool $reverse): array
-    {
-        if ($reverse && $operation->oldColumn === null) {
-            return [
-                \sprintf(
-                    '// TODO: restore previous definition for altered column %s.%s manually for rollback.',
-                    $operation->tableName,
-                    $operation->columnName,
-                ),
-            ];
-        }
-
-        $targetColumn = $reverse ? $operation->oldColumn : $operation->newColumn;
-        if ($targetColumn === null) {
-            throw new \LogicException('Old column is required to reverse an alter column operation.');
-        }
-
-        return [
-            \sprintf(
-                "\$schema->alterColumn('%s', '%s', %s);",
-                $operation->tableName,
-                $operation->columnName,
-                $this->columnExpression($targetColumn),
-            ),
-        ];
     }
 
     private function exportValue(mixed $value): string

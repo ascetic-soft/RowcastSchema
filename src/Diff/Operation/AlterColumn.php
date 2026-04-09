@@ -15,4 +15,13 @@ final readonly class AlterColumn implements OperationInterface
         public ?Column $oldColumn = null,
     ) {
     }
+
+    public function reverse(): ?AlterColumn
+    {
+        if ($this->oldColumn === null) {
+            return null;
+        }
+
+        return new AlterColumn($this->tableName, $this->newColumn->name, $this->oldColumn, $this->newColumn);
+    }
 }

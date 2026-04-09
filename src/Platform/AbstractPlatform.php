@@ -187,19 +187,6 @@ abstract readonly class AbstractPlatform implements PlatformInterface
 
     protected function compileDefaultValue(mixed $value): string
     {
-        if (\is_int($value) || \is_float($value)) {
-            return (string)$value;
-        }
-        if (\is_bool($value)) {
-            return $value ? '1' : '0';
-        }
-        if (!\is_string($value)) {
-            throw new \InvalidArgumentException('Default column value must be scalar.');
-        }
-        if (strtoupper($value) === 'CURRENT_TIMESTAMP') {
-            return 'CURRENT_TIMESTAMP';
-        }
-
-        return "'" . str_replace("'", "\\'", $value) . "'";
+        return DefaultValueFormatter::format($value);
     }
 }

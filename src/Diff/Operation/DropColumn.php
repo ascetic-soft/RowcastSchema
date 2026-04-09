@@ -11,4 +11,9 @@ final readonly class DropColumn implements OperationInterface
         public string $columnName,
     ) {
     }
+
+    public function reverse(): ?OperationInterface
+    {
+        return null;
+    }
 }

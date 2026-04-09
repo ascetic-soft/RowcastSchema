@@ -9,4 +9,9 @@ final readonly class DropTable implements OperationInterface
     public function __construct(public string $tableName)
     {
     }
+
+    public function reverse(): ?OperationInterface
+    {
+        return null;
+    }
 }

@@ -11,4 +11,9 @@ final readonly class CreateTable implements OperationInterface
     public function __construct(public Table $table)
     {
     }
+
+    public function reverse(): DropTable
+    {
+        return new DropTable($this->table->name);
+    }
 }

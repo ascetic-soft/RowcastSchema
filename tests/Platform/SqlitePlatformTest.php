@@ -42,7 +42,7 @@ final class SqlitePlatformTest extends TestCase
         self::assertStringContainsString('"id" INTEGER', $sql[0]);
     }
 
-    public function testThrowsForUnsupportedAddForeignKeyOnExistingTable(): void
+    public function testReturnEmptyForRebuildRequiredAddForeignKey(): void
     {
         $platform = new SqlitePlatform(new SqliteTypeMapper());
         $operation = new AddForeignKey('users', new ForeignKey(
@@ -52,8 +52,7 @@ final class SqlitePlatformTest extends TestCase
             referenceColumns: ['id'],
         ));
 
-        $this->expectException(\RuntimeException::class);
-        $platform->toSql($operation);
+        self::assertSame([], $platform->toSql($operation));
     }
 
     public function testGeneratesSqlForBasicOperations(): void
@@ -94,24 +93,18 @@ final class SqlitePlatformTest extends TestCase
         self::assertStringContainsString('"title" TEXT NOT NULL DEFAULT \'Bob\\\'s post\'', $sql[0]);
     }
 
-    public function testThrowsForUnsupportedDropForeignKeyOnExistingTable(): void
+    public function testReturnEmptyForRebuildRequiredDropForeignKey(): void
     {
         $platform = new SqlitePlatform(new SqliteTypeMapper());
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('SQLite cannot drop foreign key "fk_users_org" from table "users" without table rebuild.');
-
-        $platform->toSql(new DropForeignKey('users', 'fk_users_org'));
+        self::assertSame([], $platform->toSql(new DropForeignKey('users', 'fk_users_org')));
     }
 
-    public function testThrowsForUnsupportedAlterColumnOnExistingTable(): void
+    public function testReturnEmptyForRebuildRequiredAlterColumn(): void
     {
         $platform = new SqlitePlatform(new SqliteTypeMapper());
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('SQLite cannot alter column "users.email" without table rebuild pipeline.');
-
-        $platform->toSql(new AlterColumn('users', 'email', new Column('email', ColumnType::String, length: 320)));
+        self::assertSame([], $platform->toSql(new AlterColumn('users', 'email', new Column('email', ColumnType::String, length: 320))));
     }
 
     public function testThrowsWhenDefaultValueIsNotScalar(): void

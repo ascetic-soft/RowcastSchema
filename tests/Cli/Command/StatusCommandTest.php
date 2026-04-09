@@ -10,7 +10,6 @@ use AsceticSoft\RowcastSchema\Cli\Config;
 use AsceticSoft\RowcastSchema\Cli\OperationDescriber;
 use AsceticSoft\RowcastSchema\Cli\TableIgnoreMatcher;
 use AsceticSoft\RowcastSchema\Diff\SchemaDiffer;
-use AsceticSoft\RowcastSchema\Introspector\IntrospectorFactory;
 use AsceticSoft\RowcastSchema\Introspector\IntrospectorInterface;
 use AsceticSoft\RowcastSchema\Migration\MigrationLoader;
 use AsceticSoft\RowcastSchema\Migration\MigrationRepositoryInterface;
@@ -37,14 +36,12 @@ final class StatusCommandTest extends TestCase
                 return new Schema();
             }
         };
-        $factory = new IntrospectorFactory([
-            'sqlite' => static fn (): IntrospectorInterface => new class () implements IntrospectorInterface {
-                public function introspect(\PDO $pdo): Schema
-                {
-                    return new Schema();
-                }
-            },
-        ]);
+        $introspector = new class () implements IntrospectorInterface {
+            public function introspect(\PDO $pdo): Schema
+            {
+                return new Schema();
+            }
+        };
         $repo = new class () implements MigrationRepositoryInterface {
             public bool $ensured = false;
             public function ensureTable(): void
@@ -65,7 +62,7 @@ final class StatusCommandTest extends TestCase
 
         $command = new StatusCommand(
             $parser,
-            $factory,
+            $introspector,
             new SchemaDiffer(),
             new MigrationLoader(),
             $repo,

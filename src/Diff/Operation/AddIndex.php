@@ -13,4 +13,9 @@ final readonly class AddIndex implements OperationInterface
         public Index $index,
     ) {
     }
+
+    public function reverse(): DropIndex
+    {
+        return new DropIndex($this->tableName, $this->index->name);
+    }
 }

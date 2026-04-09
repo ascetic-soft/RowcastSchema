@@ -9,4 +9,9 @@ final readonly class RawSql implements OperationInterface
     public function __construct(public string $sql)
     {
     }
+
+    public function reverse(): ?OperationInterface
+    {
+        return null;
+    }
 }

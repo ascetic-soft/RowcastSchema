@@ -103,19 +103,7 @@ final class SchemaDiffer
         [$sortedCreateOperations, $hasCycle, $cycleTables] = $this->stableTopologicalSortByDependencies(
             $createByTable,
             $tableOrder,
-            static function (CreateTable $operation): array {
-                $dependencies = [];
-                $tableName = $operation->table->name;
-                foreach ($operation->table->foreignKeys as $foreignKey) {
-                    if ($foreignKey->referenceTable === $tableName) {
-                        continue;
-                    }
-
-                    $dependencies[$foreignKey->referenceTable] = true;
-                }
-
-                return array_keys($dependencies);
-            },
+            $this->foreignKeyDependencyExtractor(...),
         );
 
         if (!$hasCycle) {
@@ -170,19 +158,7 @@ final class SchemaDiffer
         [$resortedCreateOperations] = $this->stableTopologicalSortByDependencies(
             $reducedCreateByTable,
             $tableOrder,
-            static function (CreateTable $operation): array {
-                $dependencies = [];
-                $tableName = $operation->table->name;
-                foreach ($operation->table->foreignKeys as $foreignKey) {
-                    if ($foreignKey->referenceTable === $tableName) {
-                        continue;
-                    }
-
-                    $dependencies[$foreignKey->referenceTable] = true;
-                }
-
-                return array_keys($dependencies);
-            },
+            $this->foreignKeyDependencyExtractor(...),
         );
 
         return [$resortedCreateOperations, $extractedAddForeignKeys];
@@ -309,6 +285,22 @@ final class SchemaDiffer
         }
 
         return [$sorted, true, $pendingTables];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function foreignKeyDependencyExtractor(CreateTable $operation): array
+    {
+        $dependencies = [];
+        $tableName = $operation->table->name;
+        foreach ($operation->table->foreignKeys as $foreignKey) {
+            if ($foreignKey->referenceTable !== $tableName) {
+                $dependencies[$foreignKey->referenceTable] = true;
+            }
+        }
+
+        return array_keys($dependencies);
     }
 
     /**

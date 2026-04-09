@@ -7,11 +7,11 @@ namespace AsceticSoft\RowcastSchema\TypeMapper;
 use AsceticSoft\RowcastSchema\Schema\Column;
 use AsceticSoft\RowcastSchema\Schema\ColumnType;
 
-final class SqliteTypeMapper implements TypeMapperInterface
+final class SqliteTypeMapper extends AbstractTypeMapper
 {
-    public function toSqlType(Column $column): string
+    protected function mapToSqlType(Column $column): string
     {
-        return $column->databaseType ?? match ($column->requireType()) {
+        return match ($column->requireType()) {
             ColumnType::Integer,
             ColumnType::Smallint,
             ColumnType::Bigint,
@@ -33,15 +33,13 @@ final class SqliteTypeMapper implements TypeMapperInterface
         };
     }
 
-    public function toAbstractType(string $dbType): ?ColumnType
+    protected function mapToAbstractType(string $normalizedType): ?ColumnType
     {
-        $normalized = strtolower($dbType);
-
         return match (true) {
-            str_contains($normalized, 'int') => ColumnType::Integer,
-            str_contains($normalized, 'char'), str_contains($normalized, 'text'), str_contains($normalized, 'clob') => ColumnType::Text,
-            str_contains($normalized, 'real'), str_contains($normalized, 'floa'), str_contains($normalized, 'doub') => ColumnType::Double,
-            str_contains($normalized, 'blob') => ColumnType::Binary,
+            str_contains($normalizedType, 'int') => ColumnType::Integer,
+            str_contains($normalizedType, 'char'), str_contains($normalizedType, 'text'), str_contains($normalizedType, 'clob') => ColumnType::Text,
+            str_contains($normalizedType, 'real'), str_contains($normalizedType, 'floa'), str_contains($normalizedType, 'doub') => ColumnType::Double,
+            str_contains($normalizedType, 'blob') => ColumnType::Binary,
             default => null,
         };
     }

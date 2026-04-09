@@ -13,4 +13,9 @@ final readonly class AddForeignKey implements OperationInterface
         public ForeignKey $foreignKey,
     ) {
     }
+
+    public function reverse(): DropForeignKey
+    {
+        return new DropForeignKey($this->tableName, $this->foreignKey->name, $this->foreignKey);
+    }
 }

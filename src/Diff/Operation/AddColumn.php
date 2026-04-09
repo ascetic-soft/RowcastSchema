@@ -13,4 +13,9 @@ final readonly class AddColumn implements OperationInterface
         public Column $column,
     ) {
     }
+
+    public function reverse(): DropColumn
+    {
+        return new DropColumn($this->tableName, $this->column->name);
+    }
 }

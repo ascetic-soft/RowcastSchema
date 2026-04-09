@@ -6,4 +6,5 @@ namespace AsceticSoft\RowcastSchema\Diff\Operation;
 
 interface OperationInterface
 {
+    public function reverse(): ?OperationInterface;
 }

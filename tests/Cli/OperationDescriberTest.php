@@ -164,4 +164,8 @@ final class OperationDescriberTest extends TestCase
 
 final readonly class DummyOperation implements OperationInterface
 {
+    public function reverse(): ?OperationInterface
+    {
+        return null;
+    }
 }

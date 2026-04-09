@@ -9,7 +9,7 @@ use AsceticSoft\RowcastSchema\Cli\Config;
 use AsceticSoft\RowcastSchema\Cli\OperationDescriber;
 use AsceticSoft\RowcastSchema\Cli\TableIgnoreMatcher;
 use AsceticSoft\RowcastSchema\Diff\SchemaDiffer;
-use AsceticSoft\RowcastSchema\Introspector\IntrospectorFactory;
+use AsceticSoft\RowcastSchema\Introspector\IntrospectorInterface;
 use AsceticSoft\RowcastSchema\Migration\MigrationGenerator;
 use AsceticSoft\RowcastSchema\Parser\SchemaParserInterface;
 
@@ -17,7 +17,7 @@ final readonly class DiffCommand implements CommandInterface
 {
     public function __construct(
         private SchemaParserInterface $parser,
-        private IntrospectorFactory $introspectorFactory,
+        private IntrospectorInterface $introspector,
         private SchemaDiffer $differ,
         private MigrationGenerator $generator,
         private TableIgnoreMatcher $tableIgnoreMatcher,
@@ -34,8 +34,7 @@ final readonly class DiffCommand implements CommandInterface
         $this->output->newLine();
 
         $target = $this->tableIgnoreMatcher->filterSchema($this->parser->parse($config->schemaPath));
-        $introspector = $this->introspectorFactory->createForPdo($config->pdo);
-        $current = $this->tableIgnoreMatcher->filterSchema($introspector->introspect($config->pdo));
+        $current = $this->tableIgnoreMatcher->filterSchema($this->introspector->introspect($config->pdo));
         $operations = $this->differ->diff($current, $target);
 
         if ($operations === []) {
