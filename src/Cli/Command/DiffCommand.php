@@ -7,20 +7,14 @@ namespace AsceticSoft\RowcastSchema\Cli\Command;
 use AsceticSoft\RowcastSchema\Cli\ConsoleOutput;
 use AsceticSoft\RowcastSchema\Cli\Config;
 use AsceticSoft\RowcastSchema\Cli\OperationDescriber;
-use AsceticSoft\RowcastSchema\Cli\TableIgnoreMatcher;
-use AsceticSoft\RowcastSchema\Diff\SchemaDiffer;
-use AsceticSoft\RowcastSchema\Introspector\IntrospectorInterface;
+use AsceticSoft\RowcastSchema\Cli\SchemaDiffService;
 use AsceticSoft\RowcastSchema\Migration\MigrationGenerator;
-use AsceticSoft\RowcastSchema\Parser\SchemaParserInterface;
 
 final readonly class DiffCommand implements CommandInterface
 {
     public function __construct(
-        private SchemaParserInterface $parser,
-        private IntrospectorInterface $introspector,
-        private SchemaDiffer $differ,
+        private SchemaDiffService $schemaDiffService,
         private MigrationGenerator $generator,
-        private TableIgnoreMatcher $tableIgnoreMatcher,
         private ConsoleOutput $output,
         private OperationDescriber $operationDescriber,
     ) {
@@ -33,9 +27,7 @@ final readonly class DiffCommand implements CommandInterface
         $this->output->title($isDryRun ? 'diff (dry-run)' : 'diff');
         $this->output->newLine();
 
-        $target = $this->tableIgnoreMatcher->filterSchema($this->parser->parse($config->schemaPath));
-        $current = $this->tableIgnoreMatcher->filterSchema($this->introspector->introspect($config->pdo));
-        $operations = $this->differ->diff($current, $target);
+        $operations = $this->schemaDiffService->diff($config);
 
         if ($operations === []) {
             if ($isDryRun) {

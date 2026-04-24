@@ -1,68 +1,29 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Primary repo instructions live in `AGENTS.md`. Keep this file aligned with it.
 
-## Commands
+## Quick Checks
 
-```bash
-make test        # Run PHPUnit tests
-make cs-fix      # Auto-fix code style (PSR-12 + PHP 8.4 rules)
-make cs-check    # Check code style (dry-run)
-make phpstan     # Static analysis at level 9
-make ci          # cs-check + phpstan + test (full CI pipeline)
-make install     # composer install
-```
+- `make install`
+- `make ci` runs the same order as CI: `cs-check -> phpstan -> test`
+- Single test file: `vendor/bin/phpunit tests/Path/To/SomeTest.php`
 
-To run a single test file:
-```bash
-vendor/bin/phpunit tests/Path/To/SomeTest.php
-```
+## Repo Facts
 
-## Code Standards
+- This is a single-package Composer library; the CLI entrypoint is `bin/rowcast-schema`.
+- CLI command wiring and parser selection live in `src/Cli/ApplicationContainer.php`.
+- Default CLI config path is `rowcast-schema.php`; both `--config=...` and `--config ...` are supported.
+- Config files may return either an array or a `Closure(string $cwd): array`.
+- YAML schema support is optional and requires `symfony/yaml`.
 
-- PHP 8.4+, `declare(strict_types=1)` required in all files
-- PHPStan level 9 — no untyped code, no mixed, no suppression without cause
-- Short array syntax `[]`, PSR-12 style enforced by CS Fixer
+## Easy-To-Miss Behavior
 
-## Architecture
+- `SchemaDiffer` topologically orders `CreateTable` and `DropTable` operations around foreign-key dependencies.
+- If create-table cycles exist, `SchemaDiffer` extracts cyclic foreign keys into follow-up `AddForeignKey` operations.
+- SQLite DDL rebuild logic lives in `src/Migration/SqliteTableRebuilder.php`; `MigrationRunner` routes `AlterColumn`, `DropColumn`, `AddForeignKey`, and `DropForeignKey` through it.
+- Unknown database types are preserved as raw `databaseType` strings and emitted as-is.
 
-**Rowcast Schema** is a schema-first migration toolkit for PDO databases. Users define DB structure in PHP arrays, YAML, or PHP attributes; the library diffs the definition against a live DB and generates reversible PHP migration files.
+## Tests
 
-### Core Pipeline
-
-```
-Schema definition (PHP / YAML / Attributes)
-    → Parser → Schema domain objects
-    → Introspector (reads live DB via PDO) → Schema domain objects
-    → SchemaDiffer → Operation[] (CreateTable, AddColumn, AlterColumn, …)
-    → Platform (DB-specific SQL generation)
-    → MigrationGenerator → PHP migration files (up/down)
-    → MigrationRunner → executes + tracks in DB
-```
-
-### Key Modules
-
-| Module | Role |
-|---|---|
-| `Cli/` | Entry point (`bin/rowcast-schema`), command dispatch, config loading |
-| `Schema/` | Domain models: `Schema`, `Table`, `Column`, `Index`, `ForeignKey`, `ColumnType` enum |
-| `Parser/` | Three parsers (`PhpSchemaParser`, `YamlSchemaParser`, `AttributeSchemaParser`) plus shared `ArraySchemaBuilder` |
-| `Introspector/` | Driver-specific DB readers (MySQL, PostgreSQL, SQLite) via `IntrospectorFactory` |
-| `Diff/` | `SchemaDiffer` computes `OperationInterface[]`; operations are platform-agnostic |
-| `Platform/` | Driver-specific SQL generation (`MysqlPlatform`, `PostgresPlatform`, `SqlitePlatform`) via `PlatformFactory` |
-| `TypeMapper/` | Bidirectional mapping between abstract `ColumnType` enum and native DB type strings |
-| `Migration/` | `MigrationGenerator` (PHP file creation), `MigrationRunner`, `DatabaseMigrationRepository` |
-| `SchemaBuilder/` | Fluent DSL (`SchemaBuilder` → `TableBuilder` → `ColumnBuilder`) used in generated migrations |
-| `Attribute/` | PHP 8 attribute metadata: `#[Table]`, `#[Column]`, `#[Index]`, `#[ForeignKey]` |
-
-### Important Design Details
-
-- **Topological sort in `SchemaDiffer`**: `CreateTable`/`DropTable` operations are ordered to satisfy FK dependencies before execution.
-- **SQLite rebuild pipeline** (`SqliteTableRebuilder`): SQLite's DDL limitations are worked around via create→copy→drop→rename.
-- **Semantic FK diffing**: Foreign keys are compared by their logical properties (not name) to avoid spurious drop/add cycles — see recent fixes in git log.
-- **Custom DB types**: Columns with unsupported types fall back to a raw type string (enables pgvector, citext, etc.).
-- **No required external dependencies** except optional `symfony/yaml` for YAML schema support.
-
-### Testing Pattern
-
-Tests are pure unit tests — no live database. Domain objects (`Schema`, `Table`, `Column`) are constructed directly, passed to the system under test, and the resulting `Operation[]` or SQL strings are asserted. Mirror `src/` structure in `tests/`.
+- Most tests are unit tests that construct schema/domain objects directly and assert operations or SQL.
+- SQLite behavior has in-memory integration coverage in `tests/Integration/`; no external DB service is required.

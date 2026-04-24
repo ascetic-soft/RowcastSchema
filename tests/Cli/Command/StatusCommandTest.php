@@ -8,6 +8,7 @@ use AsceticSoft\RowcastSchema\Cli\Command\StatusCommand;
 use AsceticSoft\RowcastSchema\Cli\ConsoleOutput;
 use AsceticSoft\RowcastSchema\Cli\Config;
 use AsceticSoft\RowcastSchema\Cli\OperationDescriber;
+use AsceticSoft\RowcastSchema\Cli\SchemaDiffService;
 use AsceticSoft\RowcastSchema\Cli\TableIgnoreMatcher;
 use AsceticSoft\RowcastSchema\Diff\SchemaDiffer;
 use AsceticSoft\RowcastSchema\Introspector\IntrospectorInterface;
@@ -61,12 +62,9 @@ final class StatusCommandTest extends TestCase
         };
 
         $command = new StatusCommand(
-            $parser,
-            $introspector,
-            new SchemaDiffer(),
+            new SchemaDiffService($parser, $introspector, new SchemaDiffer(), new TableIgnoreMatcher()),
             new MigrationLoader(),
             $repo,
-            new TableIgnoreMatcher(),
             new ConsoleOutput(noAnsi: true),
             new OperationDescriber(),
         );

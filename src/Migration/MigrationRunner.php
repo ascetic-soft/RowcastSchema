@@ -15,6 +15,7 @@ final readonly class MigrationRunner
         private MigrationLoader $loader,
         private MigrationRepositoryInterface $repository,
         private PlatformInterface $platform,
+        private MigrationInstantiator $instantiator = new MigrationInstantiator(),
     ) {
     }
 
@@ -66,67 +67,26 @@ final readonly class MigrationRunner
 
     private function runUpMigration(string $version, string $filePath): void
     {
-        $migration = $this->instantiateMigration($version, $filePath);
+        $migration = $this->instantiator->instantiate($version, $filePath);
         $builder = new SchemaBuilder();
         $migration->up($builder);
-        $this->executeOperations($builder);
+        $this->createOperationExecutor()->execute($builder);
     }
 
     private function runDownMigration(string $version, string $filePath): void
     {
-        $migration = $this->instantiateMigration($version, $filePath);
+        $migration = $this->instantiator->instantiate($version, $filePath);
         $builder = new SchemaBuilder();
         $migration->down($builder);
-        $this->executeOperations($builder);
+        $this->createOperationExecutor()->execute($builder);
     }
 
-    private function instantiateMigration(string $version, string $filePath): MigrationInterface
+    private function createOperationExecutor(): OperationExecutor
     {
-        if (!class_exists($version, false)) {
-            require_once $filePath;
-        }
-
-        if (!class_exists($version)) {
-            throw new \RuntimeException(\sprintf('Migration class "%s" was not found in %s.', $version, $filePath));
-        }
-
-        $migration = new $version();
-        if (!$migration instanceof MigrationInterface) {
-            throw new \RuntimeException(\sprintf('Migration "%s" must implement MigrationInterface.', $version));
-        }
-
-        return $migration;
-    }
-
-    private function executeOperations(SchemaBuilder $builder): void
-    {
-        $executor = function () use ($builder): void {
-            $sqliteRebuilder = $this->platform instanceof SqlitePlatform ? new SqliteTableRebuilder() : null;
-            foreach ($builder->getOperations() as $operation) {
-                if ($sqliteRebuilder !== null && $sqliteRebuilder->supports($operation)) {
-                    $sqliteRebuilder->execute($this->pdo, $operation);
-                    continue;
-                }
-                foreach ($this->platform->toSql($operation) as $sql) {
-                    $this->pdo->exec($sql);
-                }
-            }
-        };
-
-        if ($this->platform->supportsDdlTransactions()) {
-            $this->pdo->beginTransaction();
-            try {
-                $executor();
-                $this->pdo->commit();
-            } catch (\Throwable $e) {
-                if ($this->pdo->inTransaction()) {
-                    $this->pdo->rollBack();
-                }
-                throw $e;
-            }
-            return;
-        }
-
-        $executor();
+        return new OperationExecutor(
+            $this->pdo,
+            $this->platform,
+            $this->platform instanceof SqlitePlatform ? new SqliteTableRebuilder() : null,
+        );
     }
 }

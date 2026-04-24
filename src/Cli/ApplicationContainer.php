@@ -16,11 +16,8 @@ use AsceticSoft\RowcastSchema\Migration\DatabaseMigrationRepository;
 use AsceticSoft\RowcastSchema\Migration\MigrationGenerator;
 use AsceticSoft\RowcastSchema\Migration\MigrationLoader;
 use AsceticSoft\RowcastSchema\Migration\MigrationRunner;
-use AsceticSoft\RowcastSchema\Parser\AttributeSchemaParser;
-use AsceticSoft\RowcastSchema\Parser\PhpSchemaParser;
-use AsceticSoft\RowcastSchema\Parser\SchemaParserInterface;
-use AsceticSoft\RowcastSchema\Parser\YamlSchemaParser;
 use AsceticSoft\RowcastSchema\Platform\PlatformFactory;
+use AsceticSoft\RowcastSchema\Parser\SchemaParserFactory;
 
 final readonly class ApplicationContainer
 {
@@ -29,7 +26,7 @@ final readonly class ApplicationContainer
      */
     public function buildCommands(Config $config, ConsoleOutput $output): array
     {
-        $parser = $this->createParser($config->schemaPath);
+        $parser = new SchemaParserFactory()->create($config->schemaPath);
         $differ = new SchemaDiffer();
         $introspector = new IntrospectorFactory()->createForPdo($config->pdo);
         $platform = new PlatformFactory()->createForPdo($config->pdo);
@@ -39,14 +36,12 @@ final readonly class ApplicationContainer
         $tableIgnoreMatcher = new TableIgnoreMatcher($config->ignoreTableRules, $config->migrationTableName);
         $operationDescriber = new OperationDescriber();
         $generator = new MigrationGenerator();
+        $schemaDiffService = new SchemaDiffService($parser, $introspector, $differ, $tableIgnoreMatcher);
 
         return [
             'diff' => new DiffCommand(
-                $parser,
-                $introspector,
-                $differ,
+                $schemaDiffService,
                 $generator,
-                $tableIgnoreMatcher,
                 $output,
                 $operationDescriber,
             ),
@@ -54,33 +49,12 @@ final readonly class ApplicationContainer
             'migrate' => new MigrateCommand($runner, $output),
             'rollback' => new RollbackCommand($runner, $output),
             'status' => new StatusCommand(
-                $parser,
-                $introspector,
-                $differ,
+                $schemaDiffService,
                 $loader,
                 $repository,
-                $tableIgnoreMatcher,
                 $output,
                 $operationDescriber,
             ),
         ];
-    }
-
-    private function createParser(string $schemaPath): SchemaParserInterface
-    {
-        if (is_dir($schemaPath)) {
-            return new AttributeSchemaParser();
-        }
-
-        $extension = strtolower(pathinfo($schemaPath, PATHINFO_EXTENSION));
-
-        return match ($extension) {
-            'php' => new PhpSchemaParser(),
-            'yaml', 'yml' => new YamlSchemaParser(),
-            default => throw new \InvalidArgumentException(\sprintf(
-                'Unsupported schema file extension "%s". Use .php, .yaml, or .yml.',
-                $extension !== '' ? $extension : '(none)',
-            )),
-        };
     }
 }

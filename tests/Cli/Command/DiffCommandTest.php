@@ -8,6 +8,7 @@ use AsceticSoft\RowcastSchema\Cli\Command\DiffCommand;
 use AsceticSoft\RowcastSchema\Cli\ConsoleOutput;
 use AsceticSoft\RowcastSchema\Cli\Config;
 use AsceticSoft\RowcastSchema\Cli\OperationDescriber;
+use AsceticSoft\RowcastSchema\Cli\SchemaDiffService;
 use AsceticSoft\RowcastSchema\Cli\TableIgnoreMatcher;
 use AsceticSoft\RowcastSchema\Diff\SchemaDiffer;
 use AsceticSoft\RowcastSchema\Introspector\IntrospectorInterface;
@@ -39,11 +40,8 @@ final class DiffCommandTest extends TestCase
         };
 
         $command = new DiffCommand(
-            $parser,
-            $introspector,
-            new SchemaDiffer(),
+            new SchemaDiffService($parser, $introspector, new SchemaDiffer(), new TableIgnoreMatcher()),
             new MigrationGenerator(),
-            new TableIgnoreMatcher(),
             new ConsoleOutput(noAnsi: true),
             new OperationDescriber(),
         );
@@ -80,11 +78,8 @@ final class DiffCommandTest extends TestCase
         };
 
         $command = new DiffCommand(
-            $parser,
-            $introspector,
-            new SchemaDiffer(),
+            new SchemaDiffService($parser, $introspector, new SchemaDiffer(), new TableIgnoreMatcher()),
             new MigrationGenerator(),
-            new TableIgnoreMatcher(),
             new ConsoleOutput(noAnsi: true),
             new OperationDescriber(),
         );

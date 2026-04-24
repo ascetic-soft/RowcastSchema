@@ -12,20 +12,26 @@ use AsceticSoft\RowcastSchema\Schema\ReferentialAction;
 use AsceticSoft\RowcastSchema\Schema\Schema;
 use AsceticSoft\RowcastSchema\Schema\Table;
 
-final class ArraySchemaBuilder
+final readonly class ArraySchemaBuilder
 {
+    public function __construct(
+        private ArraySchemaValueReader $valueReader = new ArraySchemaValueReader(),
+        private ArrayColumnParser $columnParser = new ArrayColumnParser(),
+    ) {
+    }
+
     /**
      * @param array<mixed, mixed> $parsed
      */
     public function build(array $parsed): Schema
     {
-        $tablesRaw = $this->requireMap($parsed['tables'] ?? null, 'Schema must contain "tables" mapping.');
+        $tablesRaw = $this->valueReader->requireMap($parsed['tables'] ?? null, 'Schema must contain "tables" mapping.');
 
         $tables = [];
         foreach ($tablesRaw as $tableName => $tableRaw) {
             $tables[$tableName] = $this->parseTable(
                 $tableName,
-                $this->requireMap($tableRaw, 'Invalid table definition.'),
+                $this->valueReader->requireMap($tableRaw, 'Invalid table definition.'),
             );
         }
 
@@ -37,7 +43,7 @@ final class ArraySchemaBuilder
      */
     private function parseTable(string $tableName, array $tableRaw): Table
     {
-        $columnsRaw = $this->requireMap(
+        $columnsRaw = $this->valueReader->requireMap(
             $tableRaw['columns'] ?? null,
             \sprintf('Table "%s" must define non-empty "columns".', $tableName),
         );
@@ -48,9 +54,9 @@ final class ArraySchemaBuilder
         $columns = [];
         $autoPrimary = [];
         foreach ($columnsRaw as $columnName => $columnRaw) {
-            $column = $this->parseColumn(
+            $column = $this->columnParser->parse(
                 $columnName,
-                $this->requireMap($columnRaw, \sprintf('Invalid column in table "%s".', $tableName)),
+                $this->valueReader->requireMap($columnRaw, \sprintf('Invalid column in table "%s".', $tableName)),
             );
             $columns[$columnName] = $column;
             if ($column->primaryKey) {
@@ -60,7 +66,7 @@ final class ArraySchemaBuilder
 
         $primaryKey = $autoPrimary;
         if (isset($tableRaw['primaryKey'])) {
-            $primaryKey = $this->toStringList(
+            $primaryKey = $this->valueReader->toStringList(
                 $tableRaw['primaryKey'],
                 \sprintf('Table "%s" primaryKey must be list.', $tableName),
             );
@@ -72,8 +78,8 @@ final class ArraySchemaBuilder
         }
         $indexes = [];
         foreach ($indexesRaw as $indexName => $indexRaw) {
-            $indexMap = $this->requireMap($indexRaw, \sprintf('Invalid index in table "%s".', $tableName));
-            $cols = $this->toStringList(
+            $indexMap = $this->valueReader->requireMap($indexRaw, \sprintf('Invalid index in table "%s".', $tableName));
+            $cols = $this->valueReader->toStringList(
                 $indexMap['columns'] ?? [],
                 \sprintf('Index "%s" columns must be list.', $indexName),
             );
@@ -90,28 +96,28 @@ final class ArraySchemaBuilder
         }
         $foreignKeys = [];
         foreach ($foreignKeysRaw as $fkName => $fkRaw) {
-            $fkMap = $this->requireMap($fkRaw, \sprintf('Invalid foreign key in table "%s".', $tableName));
-            $refs = $this->requireMap(
+            $fkMap = $this->valueReader->requireMap($fkRaw, \sprintf('Invalid foreign key in table "%s".', $tableName));
+            $refs = $this->valueReader->requireMap(
                 $fkMap['references'] ?? null,
                 \sprintf('Foreign key "%s" references is required.', $fkName),
             );
-            $columnsFk = $this->toStringList(
+            $columnsFk = $this->valueReader->toStringList(
                 $fkMap['columns'] ?? [],
                 \sprintf('Foreign key "%s" columns must be lists.', $fkName),
             );
-            $referenceColumns = $this->toStringList(
+            $referenceColumns = $this->valueReader->toStringList(
                 $refs['columns'] ?? [],
                 \sprintf('Foreign key "%s" columns must be lists.', $fkName),
             );
-            $referenceTable = $this->toString($refs['table'] ?? '', 'Foreign key reference table must be string.');
+            $referenceTable = $this->valueReader->toString($refs['table'] ?? '', 'Foreign key reference table must be string.');
 
             $foreignKeys[$fkName] = new ForeignKey(
                 name: $fkName,
                 columns: $columnsFk,
                 referenceTable: $referenceTable,
                 referenceColumns: $referenceColumns,
-                onDelete: isset($fkMap['onDelete']) ? ReferentialAction::tryFromString($this->toString($fkMap['onDelete'], 'Foreign key onDelete must be string.')) : null,
-                onUpdate: isset($fkMap['onUpdate']) ? ReferentialAction::tryFromString($this->toString($fkMap['onUpdate'], 'Foreign key onUpdate must be string.')) : null,
+                onDelete: isset($fkMap['onDelete']) ? ReferentialAction::tryFromString($this->valueReader->toString($fkMap['onDelete'], 'Foreign key onDelete must be string.')) : null,
+                onUpdate: isset($fkMap['onUpdate']) ? ReferentialAction::tryFromString($this->valueReader->toString($fkMap['onUpdate'], 'Foreign key onUpdate must be string.')) : null,
             );
         }
 
@@ -121,128 +127,9 @@ final class ArraySchemaBuilder
             primaryKey: $primaryKey,
             indexes: $indexes,
             foreignKeys: $foreignKeys,
-            engine: isset($tableRaw['engine']) ? $this->toString($tableRaw['engine'], 'Table engine must be string.') : null,
-            charset: isset($tableRaw['charset']) ? $this->toString($tableRaw['charset'], 'Table charset must be string.') : null,
-            collation: isset($tableRaw['collation']) ? $this->toString($tableRaw['collation'], 'Table collation must be string.') : null,
+            engine: isset($tableRaw['engine']) ? $this->valueReader->toString($tableRaw['engine'], 'Table engine must be string.') : null,
+            charset: isset($tableRaw['charset']) ? $this->valueReader->toString($tableRaw['charset'], 'Table charset must be string.') : null,
+            collation: isset($tableRaw['collation']) ? $this->valueReader->toString($tableRaw['collation'], 'Table collation must be string.') : null,
         );
-    }
-
-    /**
-     * @param array<string, mixed> $columnRaw
-     */
-    private function parseColumn(string $columnName, array $columnRaw): Column
-    {
-        $typeRaw = $columnRaw['type'] ?? null;
-        if (!\is_string($typeRaw)) {
-            throw new \InvalidArgumentException(\sprintf('Column "%s" must define string "type".', $columnName));
-        }
-
-        $normalizedType = $this->normalizeColumnType($typeRaw);
-        $type = ColumnType::tryFrom($normalizedType);
-        $databaseType = null;
-        if ($type === null) {
-            $type = ColumnType::Text;
-            $databaseType = \trim($typeRaw);
-        }
-
-        $enumValuesRaw = $columnRaw['values'] ?? [];
-        if (!\is_array($enumValuesRaw)) {
-            throw new \InvalidArgumentException(\sprintf('Column "%s" enum values must be list.', $columnName));
-        }
-
-        $length = isset($columnRaw['length']) ? $this->toInt($columnRaw['length'], 'Column length must be integer.') : null;
-        if ($type === ColumnType::String && $length === null) {
-            $length = 255;
-        }
-        $precision = isset($columnRaw['precision']) ? $this->toInt($columnRaw['precision'], 'Column precision must be integer.') : null;
-        $scale = isset($columnRaw['scale']) ? $this->toInt($columnRaw['scale'], 'Column scale must be integer.') : null;
-
-        return new Column(
-            name: $columnName,
-            type: $type,
-            nullable: (bool)($columnRaw['nullable'] ?? false),
-            default: $columnRaw['default'] ?? null,
-            primaryKey: (bool)($columnRaw['primaryKey'] ?? false),
-            autoIncrement: (bool)($columnRaw['autoIncrement'] ?? false),
-            length: $length,
-            precision: $precision,
-            scale: $scale,
-            unsigned: (bool)($columnRaw['unsigned'] ?? false),
-            comment: isset($columnRaw['comment']) ? $this->toString($columnRaw['comment'], 'Column comment must be string.') : null,
-            enumValues: $this->toStringList($enumValuesRaw, \sprintf('Column "%s" enum values must be list.', $columnName)),
-            databaseType: $databaseType,
-        );
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function requireMap(mixed $value, string $message): array
-    {
-        if (!\is_array($value)) {
-            throw new \InvalidArgumentException($message);
-        }
-
-        $map = [];
-        foreach ($value as $key => $item) {
-            if (!\is_string($key)) {
-                throw new \InvalidArgumentException($message);
-            }
-            $map[$key] = $item;
-        }
-
-        return $map;
-    }
-
-    private function toString(mixed $value, string $message): string
-    {
-        if (!\is_string($value)) {
-            throw new \InvalidArgumentException($message);
-        }
-
-        return $value;
-    }
-
-    private function normalizeColumnType(string $typeRaw): string
-    {
-        $normalized = \strtolower(\trim($typeRaw));
-
-        return match ($normalized) {
-            'jsonb' => ColumnType::Json->value,
-            'timestamp with time zone' => ColumnType::Timestamptz->value,
-            default => $normalized,
-        };
-    }
-
-    private function toInt(mixed $value, string $message): int
-    {
-        if (\is_int($value)) {
-            return $value;
-        }
-        if (\is_string($value) && is_numeric($value)) {
-            return (int)$value;
-        }
-
-        throw new \InvalidArgumentException($message);
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function toStringList(mixed $value, string $message): array
-    {
-        if (!\is_array($value)) {
-            throw new \InvalidArgumentException($message);
-        }
-
-        $result = [];
-        foreach ($value as $item) {
-            if (!\is_string($item)) {
-                throw new \InvalidArgumentException($message);
-            }
-            $result[] = $item;
-        }
-
-        return $result;
     }
 }
