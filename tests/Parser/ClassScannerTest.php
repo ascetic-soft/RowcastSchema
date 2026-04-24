@@ -54,6 +54,38 @@ final class ClassScannerTest extends TestCase
         new ClassScanner()->scan(__FILE__);
     }
 
+    public function testScansBracketedGlobalAndMultipleClassesUniquely(): void
+    {
+        $dir = $this->createTempDirectory();
+
+        file_put_contents($dir . '/Bracketed.php', <<<'PHP'
+            <?php
+            namespace Demo\Bracketed {
+                final class Alpha {}
+                final class Beta {}
+            }
+            PHP);
+        file_put_contents($dir . '/GlobalClass.php', <<<'PHP'
+            <?php
+            class GlobalThing {}
+            PHP);
+        file_put_contents($dir . '/Empty.php', '');
+        file_put_contents($dir . '/Ignore.txt', 'not php');
+
+        try {
+            $classes = new ClassScanner()->scan($dir);
+
+            sort($classes);
+            self::assertSame([
+                'Demo\\Bracketed\\Alpha',
+                'Demo\\Bracketed\\Beta',
+                'GlobalThing',
+            ], $classes);
+        } finally {
+            $this->deleteDirectory($dir);
+        }
+    }
+
     private function createTempDirectory(): string
     {
         $temp = tempnam(sys_get_temp_dir(), 'rowcast_scanner_');

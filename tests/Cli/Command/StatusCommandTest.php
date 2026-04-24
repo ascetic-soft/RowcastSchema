@@ -15,7 +15,10 @@ use AsceticSoft\RowcastSchema\Introspector\IntrospectorInterface;
 use AsceticSoft\RowcastSchema\Migration\MigrationLoader;
 use AsceticSoft\RowcastSchema\Migration\MigrationRepositoryInterface;
 use AsceticSoft\RowcastSchema\Parser\SchemaParserInterface;
+use AsceticSoft\RowcastSchema\Schema\Column;
+use AsceticSoft\RowcastSchema\Schema\ColumnType;
 use AsceticSoft\RowcastSchema\Schema\Schema;
+use AsceticSoft\RowcastSchema\Schema\Table;
 use PHPUnit\Framework\TestCase;
 
 final class StatusCommandTest extends TestCase
@@ -84,5 +87,72 @@ final class StatusCommandTest extends TestCase
         @unlink($file1);
         @unlink($file2);
         @rmdir($dir);
+    }
+
+    public function testPrintsSchemaDiffDetailsWhenSchemaIsOutOfSync(): void
+    {
+        $pdo = new \PDO('sqlite::memory:');
+        $dir = sys_get_temp_dir() . '/rowcast_status_diff_' . uniqid('', true);
+        mkdir($dir, 0o777, true);
+        $file = $dir . '/Migration_20260112_000001.php';
+        file_put_contents($file, "<?php\n");
+
+        $config = new Config('schema.php', $dir, '_rowcast_migrations', $pdo);
+        $parser = new class () implements SchemaParserInterface {
+            public function parse(string $path): Schema
+            {
+                return new Schema([
+                    'users' => new Table(
+                        'users',
+                        ['id' => new Column('id', ColumnType::Integer, primaryKey: true)],
+                        ['id'],
+                    ),
+                ]);
+            }
+        };
+        $introspector = new class () implements IntrospectorInterface {
+            public function introspect(\PDO $pdo): Schema
+            {
+                return new Schema();
+            }
+        };
+        $repo = new class () implements MigrationRepositoryInterface {
+            public function ensureTable(): void
+            {
+            }
+            public function getApplied(): array
+            {
+                return [];
+            }
+            public function markApplied(string $version): void
+            {
+            }
+            public function markRolledBack(string $version): void
+            {
+            }
+        };
+
+        $command = new StatusCommand(
+            new SchemaDiffService($parser, $introspector, new SchemaDiffer(), new TableIgnoreMatcher()),
+            new MigrationLoader(),
+            $repo,
+            new ConsoleOutput(noAnsi: true),
+            new OperationDescriber(),
+        );
+
+        try {
+            ob_start();
+            $code = $command->execute([], $config);
+            $out = (string) ob_get_clean();
+
+            self::assertSame(0, $code);
+            self::assertStringContainsString('[..] Migration_20260112_000001  pending', $out);
+            self::assertStringContainsString('Schema: 1 operation detected.', $out);
+            self::assertStringContainsString('+ Create table "users"', $out);
+            self::assertStringContainsString('Summary: 1 tables created', $out);
+        } finally {
+            @unlink($file);
+            @rmdir($dir);
+        }
     }
 }

@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace AsceticSoft\RowcastSchema\Tests\Parser;
 
+use AsceticSoft\RowcastSchema\Attribute\Column;
+use AsceticSoft\RowcastSchema\Attribute\ForeignKey;
+use AsceticSoft\RowcastSchema\Attribute\Index;
+use AsceticSoft\RowcastSchema\Attribute\Table;
 use AsceticSoft\RowcastSchema\Parser\AttributeSchemaBuilder;
 use AsceticSoft\RowcastSchema\Schema\ColumnType;
 use AsceticSoft\RowcastSchema\Tests\Fixtures\Entity\Article;
@@ -12,6 +16,32 @@ use AsceticSoft\RowcastSchema\Tests\Fixtures\Entity\OzonCategoryEmbedding;
 use AsceticSoft\RowcastSchema\Tests\Fixtures\Entity\Post;
 use AsceticSoft\RowcastSchema\Tests\Fixtures\Entity\User;
 use PHPUnit\Framework\TestCase;
+
+#[Table]
+class AttributeSchemaBuilderInheritedParent
+{
+    #[Column]
+    public int $parentId;
+}
+
+#[Table]
+#[Index('idx_children_code', columns: ['code'])]
+#[ForeignKey('fk_children_user', referenceTable: 'users', referenceColumns: ['id'], columns: ['user_id'])]
+final class AttributeSchemaBuilderInheritedChild extends AttributeSchemaBuilderInheritedParent
+{
+    #[Column]
+    public string $code;
+
+    #[Column]
+    public int $userId;
+}
+
+#[Table('')]
+final class AttributeSchemaBuilderEmptyTableName
+{
+    #[Column]
+    public int $id;
+}
 
 final class AttributeSchemaBuilderTest extends TestCase
 {
@@ -86,5 +116,31 @@ final class AttributeSchemaBuilderTest extends TestCase
         self::assertNotNull($openai);
         self::assertSame(ColumnType::Text, $openai->type);
         self::assertSame('vector(1536)', $openai->databaseType);
+    }
+
+    public function testSkipsMissingAndNonAttributedClassesAndIgnoresInheritedProperties(): void
+    {
+        $schema = new AttributeSchemaBuilder()->build([
+            'Demo\\MissingClass',
+            \stdClass::class,
+            AttributeSchemaBuilderInheritedChild::class,
+        ]);
+
+        $children = $schema->getTable('attribute_schema_builder_inherited_childs');
+        self::assertNotNull($children);
+        self::assertNull($children->getColumn('parent_id'));
+        self::assertNotNull($children->getColumn('code'));
+        self::assertArrayHasKey('idx_children_code', $children->indexes);
+        self::assertArrayHasKey('fk_children_user', $children->foreignKeys);
+    }
+
+    public function testThrowsWhenTableAttributeNameIsEmpty(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Table name cannot be empty for class');
+
+        new AttributeSchemaBuilder()->build([
+            AttributeSchemaBuilderEmptyTableName::class,
+        ]);
     }
 }

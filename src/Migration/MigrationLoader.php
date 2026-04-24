@@ -4,8 +4,16 @@ declare(strict_types=1);
 
 namespace AsceticSoft\RowcastSchema\Migration;
 
-final class MigrationLoader
+final readonly class MigrationLoader
 {
+    /**
+     * @param null|callable(string): (array<int, string>|false) $fileLister
+     */
+    public function __construct(
+        private mixed $fileLister = null,
+    ) {
+    }
+
     /**
      * @return array<string, string> [className => filePath]
      */
@@ -15,7 +23,7 @@ final class MigrationLoader
             return [];
         }
 
-        $files = glob(rtrim($migrationsPath, '/\\') . '/Migration_*.php');
+        $files = $this->listFiles(rtrim($migrationsPath, '/\\') . '/Migration_*.php');
         if ($files === false) {
             return [];
         }
@@ -29,5 +37,17 @@ final class MigrationLoader
         }
 
         return $result;
+    }
+
+    /**
+     * @return array<int, string>|false
+     */
+    private function listFiles(string $pattern): array|false
+    {
+        if (is_callable($this->fileLister)) {
+            return ($this->fileLister)($pattern);
+        }
+
+        return glob($pattern);
     }
 }
